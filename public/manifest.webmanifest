@@ -31,14 +31,19 @@
   ],
   "shortcuts": [
     {
+      "name": "Check-in",
+      "short_name": "Check-in",
+      "url": "/?checkin=1"
+    },
+    {
       "name": "Flow starten",
-      "url": "/flow",
-      "short_name": "Flow"
+      "short_name": "Flow",
+      "url": "/flow"
     },
     {
       "name": "Stats",
-      "url": "/stats",
-      "short_name": "Stats"
+      "short_name": "Stats",
+      "url": "/stats"
     }
   ],
   "id": "/",

@@ -11,6 +11,7 @@ import { unlockAudio } from "@/lib/audio";
 import { haptic } from "@/lib/haptics";
 import { useStore } from "@/lib/store";
 import { liveRoutines } from "@/lib/score";
+import { decodeRoutine, routineLink } from "@/lib/share";
 import { SEG_KINDS, type FlowRoutine } from "@/lib/types";
 
 export default function FlowPage() {
@@ -31,6 +32,25 @@ function Flow() {
   const addSeedRoutines = useStore((s) => s.addSeedRoutines);
   const [editing, setEditing] = useState<FlowRoutine | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  const addRoutine = useStore((s) => s.addRoutine);
+
+  /* Geteilte Sequenz aus dem Link. Der Code wird beim Dekodieren validiert;
+     trägt er nicht, passiert nichts außer einem Hinweis. Danach wird der
+     Parameter aus der Adresse genommen, damit ein Reload nicht doppelt anlegt. */
+  useEffect(() => {
+    const code = params.get("v");
+    if (!code) return;
+    const parsed = decodeRoutine(code);
+    if (parsed) {
+      addRoutine(parsed);
+      haptic("success");
+      toast(`„${parsed.name}" übernommen`);
+    } else {
+      toast("Dieser Sequenz-Link ist unvollständig");
+    }
+    window.history.replaceState({}, "", "/flow");
+  }, [params, addRoutine]);
 
   const routines = liveRoutines(data);
   const sessions = [...data.sessions].reverse().slice(0, 6);
@@ -113,7 +133,27 @@ function Flow() {
               ))}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 4, marginTop: 6 }}>
+              <button
+                className="btn plain"
+                onClick={async () => {
+                  const url = routineLink(r);
+                  haptic("tap");
+                  try {
+                    if (navigator.share) {
+                      await navigator.share({ title: r.name, text: `Flow-Sequenz „${r.name}"`, url });
+                      return;
+                    }
+                    await navigator.clipboard.writeText(url);
+                    toast("Link kopiert");
+                  } catch (err) {
+                    if (err instanceof DOMException && err.name === "AbortError") return;
+                    toast("Teilen hat nicht geklappt");
+                  }
+                }}
+              >
+                Teilen
+              </button>
               <button className="btn plain" onClick={() => { setEditing(r); setSheetOpen(true); haptic("tap"); }}>
                 Bearbeiten
               </button>

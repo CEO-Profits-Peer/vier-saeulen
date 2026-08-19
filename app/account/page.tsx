@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Nav } from "@/components/Nav";
 import { Hydrated } from "@/components/Hydrated";
+import { InstallButton } from "@/components/InstallButton";
 import { toast } from "@/components/Toast";
 import { haptic } from "@/lib/haptics";
 import {
@@ -494,9 +495,11 @@ function Account() {
       <p className="section-title">App</p>
       <div className="card">
         <p style={{ margin: 0, fontSize: 15 }}>
-          <b>Auf dem Homescreen:</b> Samsung Internet oder Chrome → Menü <b>⋮</b> → <b>App installieren</b> bzw. „Seite hinzufügen zu →
-          Startbildschirm“. Danach läuft sie ohne Browserleiste und startet auch ohne Netz.
+          Auf dem Homescreen läuft sie ohne Browserleiste, mit eigenem Icon — und startet auch ohne Netz.
         </p>
+        <div style={{ marginTop: 12 }}>
+          <InstallButton />
+        </div>
       </div>
 
       <div className="card">

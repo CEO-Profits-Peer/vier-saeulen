@@ -56,6 +56,8 @@ export interface WeekRec {
   wins: string[];
   lesson: string;
   focus: string;
+  /** Bis zu drei Schwerpunkte, die die Woche ueber auf "Heute" stehen */
+  plans?: string[];
   updatedAt: number;
 }
 
@@ -121,6 +123,8 @@ export interface AppData {
   sessions: Session[];
   /** optional: aeltere Backups kennen das Feld nicht */
   profile?: Profile;
+  /** Tage, die per Joker geschuetzt sind — sie brechen die Serie nicht */
+  jokers?: string[];
   updatedAt: number;
 }
 
@@ -149,3 +153,6 @@ export const DAY_ABBR = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
 export const ALLDAYS = [0, 1, 2, 3, 4, 5, 6];
 export const WEEKDAYS = [1, 2, 3, 4, 5];
 export const STREAK_MIN = 60;
+/** Ein Joker pro Kalendermonat. Mehr wuerde die Serie bedeutungslos machen. */
+export const JOKERS_PER_MONTH = 1;
+export const MAX_WEEK_PLANS = 3;

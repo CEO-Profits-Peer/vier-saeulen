@@ -1,5 +1,5 @@
 import { addDays, dkey, fromKey, todayKey } from "./date";
-import { PKEYS, STREAK_MIN, type AppData, type Habit, type Pillar } from "./types";
+import { JOKERS_PER_MONTH, PKEYS, STREAK_MIN, type AppData, type Habit, type Pillar } from "./types";
 
 export const liveHabits = (d: AppData) => d.habits.filter((h) => !h.deletedAt);
 export const liveGoals = (d: AppData) => d.goals.filter((g) => !g.deletedAt);
@@ -52,28 +52,47 @@ export function levelInfo(xp: number) {
   return { lvl, rem, need };
 }
 
+/** Ein Joker ueberbrueckt einen Tag: er bricht die Serie nicht, zaehlt aber
+ *  auch nicht mit. Sonst liesse sich eine Serie aus lauter Jokern bauen. */
+const isJoker = (d: AppData, key: string) => (d.jokers ?? []).includes(key);
+const holds = (d: AppData, key: string) => Boolean(d.days[key]) && dayStats(d, key).pct >= STREAK_MIN;
+
 export function streak(d: AppData) {
   let n = 0;
   let day = new Date();
-  if (dayStats(d, dkey(day)).pct < STREAK_MIN) day = addDays(day, -1);
+  if (!holds(d, dkey(day)) && !isJoker(d, dkey(day))) day = addDays(day, -1);
   for (let i = 0; i < 500; i++) {
     const k = dkey(day);
-    if (!d.days[k] || dayStats(d, k).pct < STREAK_MIN) break;
+    if (isJoker(d, k)) {
+      day = addDays(day, -1);
+      continue;
+    }
+    if (!holds(d, k)) break;
     n++;
     day = addDays(day, -1);
   }
   return n;
 }
 
+/** Wie viele Joker in diesem Kalendermonat noch offen sind. */
+export function jokersLeft(d: AppData, when = new Date()) {
+  const prefix = dkey(when).slice(0, 7);
+  const used = (d.jokers ?? []).filter((k) => k.startsWith(prefix)).length;
+  return Math.max(0, JOKERS_PER_MONTH - used);
+}
+
 export function bestStreak(d: AppData) {
-  const keys = Object.keys(d.days)
-    .filter((k) => dayStats(d, k).pct >= STREAK_MIN)
+  const keys = [...new Set([...Object.keys(d.days), ...(d.jokers ?? [])])]
+    .filter((k) => holds(d, k) || isJoker(d, k))
     .sort();
   let best = 0;
   let run = 0;
   let prev: string | null = null;
   for (const k of keys) {
-    run = prev && dkey(addDays(fromKey(prev), 1)) === k ? run + 1 : 1;
+    const consecutive = prev !== null && dkey(addDays(fromKey(prev), 1)) === k;
+    /* Joker halten die Kette, erhoehen sie aber nicht. */
+    const add = isJoker(d, k) ? 0 : 1;
+    run = consecutive ? run + add : add;
     best = Math.max(best, run);
     prev = k;
   }

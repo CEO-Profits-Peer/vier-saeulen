@@ -6,7 +6,7 @@
  * VERSION bei jedem Release hochzählen — davon hängt ab, ob alte Caches
  * beim Aktivieren weggeräumt werden.
  */
-const VERSION = "v2";
+const VERSION = "v3";
 const SHELL = `viersaeulen-shell-${VERSION}`;
 const ASSETS = `viersaeulen-assets-${VERSION}`;
 

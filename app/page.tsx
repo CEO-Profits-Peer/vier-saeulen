@@ -1,5 +1,7 @@
 "use client";
 
+import { WeekPlan } from "@/components/WeekPlan";
+import { shareDayCard } from "@/lib/share";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
@@ -66,9 +68,22 @@ function Today() {
         title="Heute"
         subtitle={fmtLong(fromKey(key))}
         right={
-          <Link href="/account" className="badge" aria-label="Konto und Daten">
-            ⚙︎ Konto
-          </Link>
+          <>
+            <button
+              className="badge"
+              aria-label="Tag als Bild teilen"
+              onClick={async () => {
+                const res = await shareDayCard(data, key);
+                if (res === "downloaded") toast("Als Bild gespeichert");
+                else if (res === "failed") toast("Teilen hat nicht geklappt");
+              }}
+            >
+              ↗ Teilen
+            </button>
+            <Link href="/account" className="badge" aria-label="Konto und Daten">
+              ⚙︎ Konto
+            </Link>
+          </>
         }
       />
 
@@ -158,6 +173,8 @@ function Today() {
       {/* Flow-Schnellstart */}
       {routines.length ? (
         <>
+          <WeekPlan compact />
+
           <p className="section-title">Flow</p>
           <div className="group">
             {routines.slice(0, 2).map((r) => {

@@ -39,7 +39,7 @@ interface Store {
   removeGoal: (id: string) => void;
   bumpGoal: (id: string, amount: number) => void;
 
-  setWeek: (patch: { wins?: string[]; lesson?: string; focus?: string }) => void;
+  setWeek: (patch: { wins?: string[]; lesson?: string; focus?: string; plans?: string[] }) => void;
 
   addRoutine: (r: Omit<FlowRoutine, "id" | "updatedAt">) => string;
   updateRoutine: (id: string, patch: Partial<FlowRoutine>) => void;
@@ -51,6 +51,8 @@ interface Store {
   resumeRun: () => void;
   advanceRun: (opts?: { skipped?: boolean }) => void;
   stopRun: (save: boolean) => void;
+
+  toggleJoker: (dayKey: string) => void;
 
   resetAll: () => void;
 }
@@ -357,6 +359,16 @@ export const useStore = create<Store>()(
               ? touch({ ...s.data, days: { ...s.data.days, [key]: rec }, sessions: [...s.data.sessions, session].slice(-400) })
               : s.data,
           };
+        }),
+
+      /** Schuetzt einen Tag, sodass er die Serie nicht bricht — oder nimmt den
+       *  Schutz zurueck. Wie viele im Monat erlaubt sind, prueft die Oberflaeche
+       *  ueber jokersLeft; hier bleibt es bewusst eine reine Umschaltung. */
+      toggleJoker: (dayKey) =>
+        set((s) => {
+          const cur = s.data.jokers ?? [];
+          const jokers = cur.includes(dayKey) ? cur.filter((k) => k !== dayKey) : [...cur, dayKey].sort();
+          return { data: touch({ ...s.data, jokers }) };
         }),
 
       resetAll: () => set({ data: blankData(), run: null, runMinimized: false, lastSyncedAt: null }),

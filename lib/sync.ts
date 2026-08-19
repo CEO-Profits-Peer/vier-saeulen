@@ -43,6 +43,10 @@ export function mergeData(local: AppData, remote: AppData): AppData {
       .slice(-400)
       .map(({ updatedAt: _drop, ...s }) => s),
     profile: newerProfile(local.profile, remote.profile),
+    /* Joker sind reine Tagesschluessel ohne Zeitstempel — die Vereinigung ist
+       hier richtig: ein auf einem Geraet gesetzter Schutz soll nicht
+       verschwinden, nur weil das andere Geraet ihn nicht kennt. */
+    jokers: [...new Set([...(local.jokers ?? []), ...(remote.jokers ?? [])])].sort(),
     updatedAt: Math.max(local.updatedAt, remote.updatedAt),
   };
 }

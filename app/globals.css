@@ -334,6 +334,8 @@ a { color: var(--tint); text-decoration: none; }
 .checked .row-title { color: var(--label-2); text-decoration: line-through; text-decoration-thickness: 1.5px; }
 
 .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--p, var(--tint)); flex: none; }
+.dot-good { background: var(--green); box-shadow: 0 0 8px -1px var(--green); }
+.dot-bad { background: var(--money); box-shadow: 0 0 8px -1px var(--money); }
 
 .badge {
   display: inline-flex;

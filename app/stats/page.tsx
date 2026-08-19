@@ -1,5 +1,7 @@
 "use client";
 
+import { DayLookup } from "@/components/DayLookup";
+import { Insights } from "@/components/Insights";
 import { useMemo } from "react";
 import { Nav } from "@/components/Nav";
 import { Hydrated } from "@/components/Hydrated";
@@ -109,6 +111,12 @@ function Stats() {
         <Tile label="Gesamt-XP" value={nf.format(xp)} />
         <Tile label="Level" value={String(level.lvl)} suffix={`${level.rem}/${level.need}`} />
       </div>
+
+      <p className="section-title">Muster</p>
+      <Insights />
+
+      <p className="section-title">Rückblick</p>
+      <DayLookup />
 
       <p className="section-title">Konsistenz · 12 Wochen</p>
       <div className="card">

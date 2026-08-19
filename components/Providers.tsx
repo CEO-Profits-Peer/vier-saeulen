@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/lib/auth";
+import { useInstall, isStandalone } from "@/lib/install";
 import { useNet, netMessage } from "@/lib/net";
 import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -34,6 +35,31 @@ export function Providers({ children }: { children: React.ReactNode }) {
     return () => {
       window.removeEventListener("online", apply);
       window.removeEventListener("offline", apply);
+    };
+  }, []);
+
+  /* Installierbarkeit. Chrome feuert beforeinstallprompt einmal und erwartet,
+     dass wir das Ereignis aufheben — ohne preventDefault zeigt der Browser
+     seine eigene Leiste und das Ereignis ist fuer uns verloren. */
+  useEffect(() => {
+    const install = useInstall.getState();
+    install.setStandalone(isStandalone());
+
+    const onPrompt = (e: Event) => {
+      e.preventDefault();
+      install.setPrompt(e as never);
+    };
+    const onInstalled = () => install.setJustInstalled(true);
+    const mq = window.matchMedia("(display-mode: standalone)");
+    const onMode = () => install.setStandalone(isStandalone());
+
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("appinstalled", onInstalled);
+    mq.addEventListener("change", onMode);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
+      mq.removeEventListener("change", onMode);
     };
   }, []);
 
