@@ -159,7 +159,6 @@ a { color: var(--tint); text-decoration: none; }
   padding: calc(env(safe-area-inset-top) + 6px) 16px 8px;
   background: color-mix(in srgb, var(--bg) 82%, transparent);
   backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
   transition: border-color 0.2s;
   border-bottom: 0.5px solid transparent;
 }
@@ -378,7 +377,6 @@ a { color: var(--tint); text-decoration: none; }
   z-index: 40;
   background: color-mix(in srgb, var(--bg-elevated) 78%, transparent);
   backdrop-filter: saturate(180%) blur(24px);
-  -webkit-backdrop-filter: saturate(180%) blur(24px);
   border-top: 0.5px solid var(--separator);
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -431,7 +429,7 @@ a { color: var(--tint); text-decoration: none; }
 .toast {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--tabbar) + 24px + env(safe-area-inset-bottom));
+  bottom: calc(var(--tabbar) + 38px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   z-index: 80;
   background: rgba(28, 28, 30, 0.94);
@@ -449,6 +447,341 @@ a { color: var(--tint); text-decoration: none; }
 .p-image { --p: var(--image); }
 .p-money { --p: var(--money); }
 .p-relax { --p: var(--relax); }
+
+/* ============================================================
+   Liquid Glass — Material-Ebene
+   Steht bewusst nach den Flächen oben: Glas ersetzt dort die
+   deckenden Hintergründe. Alles hier ist rein visuell — Abstände,
+   Radien und Typografie bleiben, wie sie waren.
+   ============================================================ */
+
+:root {
+  --glass-blur: 20px;
+  --glass-sat: 180%;
+
+  --glass-fill: rgba(255, 255, 255, 0.55);
+  --glass-fill-strong: rgba(255, 255, 255, 0.74);
+  --glass-fill-soft: rgba(255, 255, 255, 0.36);
+
+  /* Specular — die helle Kante oben, wo Licht auf die Scheibe trifft */
+  --glass-sheen: rgba(255, 255, 255, 0.9);
+  --glass-rim: rgba(255, 255, 255, 0.55);
+  --glass-lens: rgba(255, 255, 255, 0.32);
+  --glass-under: rgba(0, 0, 0, 0.05);
+
+  --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 28px -14px rgba(0, 0, 0, 0.22);
+  --glass-shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.07), 0 22px 48px -18px rgba(0, 0, 0, 0.3);
+
+  --aurora-opacity: 0.5;
+  --spring: cubic-bezier(0.32, 1.4, 0.5, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --glass-fill: rgba(62, 62, 68, 0.5);
+    --glass-fill-strong: rgba(62, 62, 68, 0.72);
+    --glass-fill-soft: rgba(62, 62, 68, 0.32);
+    --glass-sheen: rgba(255, 255, 255, 0.2);
+    --glass-rim: rgba(255, 255, 255, 0.11);
+    --glass-lens: rgba(255, 255, 255, 0.09);
+    --glass-under: rgba(0, 0, 0, 0.3);
+    --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 28px -14px rgba(0, 0, 0, 0.7);
+    --glass-shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.55), 0 22px 48px -18px rgba(0, 0, 0, 0.8);
+    --aurora-opacity: 0.44;
+  }
+}
+
+:root[data-theme="dark"] {
+  --glass-fill: rgba(62, 62, 68, 0.5);
+  --glass-fill-strong: rgba(62, 62, 68, 0.72);
+  --glass-fill-soft: rgba(62, 62, 68, 0.32);
+  --glass-sheen: rgba(255, 255, 255, 0.2);
+  --glass-rim: rgba(255, 255, 255, 0.11);
+  --glass-lens: rgba(255, 255, 255, 0.09);
+  --glass-under: rgba(0, 0, 0, 0.3);
+  --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 28px -14px rgba(0, 0, 0, 0.7);
+  --glass-shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.55), 0 22px 48px -18px rgba(0, 0, 0, 0.8);
+  --aurora-opacity: 0.44;
+}
+
+/* ------------------------------------------------------------
+   Aurora — ohne etwas dahinter ist Transparenz unsichtbar.
+   Vier weiche Farbfelder in den Säulenfarben, träge in Bewegung.
+   Animiert wird nur transform, damit die GPU das allein trägt.
+   ------------------------------------------------------------ */
+html { background: var(--bg); }
+body { background: transparent; }
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: -30%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--aurora-opacity);
+  background:
+    radial-gradient(38% 30% at 14% 10%, color-mix(in srgb, var(--learn) 62%, transparent), transparent 68%),
+    radial-gradient(34% 28% at 86% 16%, color-mix(in srgb, var(--image) 52%, transparent), transparent 68%),
+    radial-gradient(40% 32% at 80% 84%, color-mix(in srgb, var(--money) 50%, transparent), transparent 68%),
+    radial-gradient(36% 30% at 18% 78%, color-mix(in srgb, var(--body) 54%, transparent), transparent 68%);
+  animation: aurora 46s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes aurora {
+  0%   { transform: translate3d(-2%, -1%, 0) scale(1.05) rotate(0deg); }
+  50%  { transform: translate3d(3%, 2%, 0)  scale(1.14) rotate(3deg); }
+  100% { transform: translate3d(-1%, 2%, 0) scale(1.08) rotate(-2deg); }
+}
+
+/* ------------------------------------------------------------
+   Die Scheibe selbst
+   ------------------------------------------------------------ */
+.glass,
+.card,
+.group,
+.empty {
+  position: relative;
+  background: var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  box-shadow:
+    inset 0 0.5px 0 0 var(--glass-sheen),
+    inset 0 0 0 0.5px var(--glass-rim),
+    inset 0 -1px 2px -1px var(--glass-under),
+    var(--glass-shadow);
+}
+
+/* Linse: der schräge Lichtverlauf über der Fläche */
+.glass::after,
+.card::after,
+.group::after,
+.empty::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(158deg, var(--glass-lens) 0%, transparent 46%);
+  /* backdrop-filter macht die Fläche selbst zum Stacking-Context, deshalb malt
+     z-index:-1 hier über den eigenen Hintergrund, aber unter den Inhalt.
+     Kein Eingriff in die Kinder nötig — das würde absolute Positionierung
+     darin zerschießen. */
+  z-index: -1;
+}
+
+.row + .row::before { background: color-mix(in srgb, var(--separator) 70%, transparent); }
+
+/* ------------------------------------------------------------
+   Steuerelemente
+   ------------------------------------------------------------ */
+.btn {
+  background: var(--glass-fill-strong);
+  backdrop-filter: blur(12px) saturate(var(--glass-sat));
+  box-shadow:
+    inset 0 0.5px 0 0 var(--glass-sheen),
+    inset 0 0 0 0.5px var(--glass-rim),
+    var(--glass-shadow);
+  transition: transform 0.32s var(--spring), box-shadow 0.2s ease, opacity 0.12s;
+}
+.btn:active { transform: scale(0.955); box-shadow: inset 0 0 0 0.5px var(--glass-rim), var(--glass-shadow); }
+
+.btn.filled {
+  background: var(--tint);
+  color: #fff;
+  box-shadow:
+    inset 0 0.5px 0 0 rgba(255, 255, 255, 0.45),
+    0 6px 18px -8px color-mix(in srgb, var(--tint) 70%, transparent),
+    var(--glass-shadow);
+}
+.btn.danger.filled {
+  background: var(--red);
+  box-shadow:
+    inset 0 0.5px 0 0 rgba(255, 255, 255, 0.45),
+    0 6px 18px -8px color-mix(in srgb, var(--red) 70%, transparent),
+    var(--glass-shadow);
+}
+.btn.plain { background: none; backdrop-filter: none; box-shadow: none; }
+.btn.plain:active { box-shadow: none; }
+
+.field {
+  background: var(--glass-fill-soft);
+  backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: inset 0 0 0 0.5px var(--glass-rim), inset 0 1px 2px -1px var(--glass-under);
+  transition: box-shadow 0.2s ease;
+}
+.field:focus {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--tint) 60%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--tint) 14%, transparent);
+}
+
+.segmented {
+  background: var(--glass-fill-soft);
+  backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: inset 0 0 0 0.5px var(--glass-rim);
+}
+.segmented button[aria-selected="true"] {
+  background: var(--glass-fill-strong);
+  box-shadow:
+    inset 0 0.5px 0 0 var(--glass-sheen),
+    inset 0 0 0 0.5px var(--glass-rim),
+    0 2px 6px -2px rgba(0, 0, 0, 0.18);
+}
+
+.chip {
+  background: var(--glass-fill-soft);
+  backdrop-filter: blur(10px) saturate(140%);
+  box-shadow: inset 0 0.5px 0 0 var(--glass-sheen), inset 0 0 0 0.5px var(--glass-rim);
+  transition: transform 0.32s var(--spring), background 0.2s ease, box-shadow 0.2s ease;
+}
+.chip:active { transform: scale(0.94); }
+.chip[aria-pressed="true"] {
+  box-shadow:
+    inset 0 0.5px 0 0 rgba(255, 255, 255, 0.4),
+    0 4px 14px -6px color-mix(in srgb, var(--tint) 70%, transparent);
+}
+.chip.pillar[aria-pressed="true"] {
+  box-shadow:
+    inset 0 0.5px 0 0 rgba(255, 255, 255, 0.4),
+    0 4px 14px -6px color-mix(in srgb, var(--p) 70%, transparent);
+}
+
+.badge { backdrop-filter: blur(8px); box-shadow: inset 0 0 0 0.5px var(--glass-rim); }
+
+.checkbox { transition: background 0.24s ease, border-color 0.24s ease, box-shadow 0.3s ease, transform 0.4s var(--spring); }
+.checked .checkbox {
+  box-shadow: 0 3px 12px -4px color-mix(in srgb, var(--p, var(--tint)) 80%, transparent);
+  transform: scale(1.06);
+}
+
+.progress { box-shadow: inset 0 0 0 0.5px var(--glass-rim), inset 0 1px 2px -1px var(--glass-under); }
+.progress i { box-shadow: 0 0 10px -2px color-mix(in srgb, var(--p, var(--tint)) 70%, transparent); }
+
+/* ------------------------------------------------------------
+   Chrome — Nav, Tab-Leiste, Sheet, Toast
+   ------------------------------------------------------------ */
+.nav {
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  backdrop-filter: saturate(var(--glass-sat)) blur(24px);
+}
+
+/* Schwebende Kapsel statt angeklebter Leiste — die Signatur des Materials */
+.tabbar {
+  left: 12px;
+  right: 12px;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  max-width: 616px;
+  margin: 0 auto;
+  border-top: 0;
+  border-radius: 26px;
+  padding-bottom: 0;
+  overflow: hidden;
+  background: var(--glass-fill-strong);
+  backdrop-filter: saturate(var(--glass-sat)) blur(28px);
+  box-shadow:
+    inset 0 0.5px 0 0 var(--glass-sheen),
+    inset 0 0 0 0.5px var(--glass-rim),
+    var(--glass-shadow-lift);
+}
+.tabbar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(170deg, var(--glass-lens) 0%, transparent 55%);
+}
+.tabbar-inner { position: relative; z-index: 1; }
+
+.tab { position: relative; z-index: 1; }
+.tab-glow {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  z-index: 0;
+  pointer-events: none;
+  transition: transform 0.42s cubic-bezier(0.34, 1.32, 0.48, 1);
+}
+.tab-glow i {
+  position: absolute;
+  inset: 0 8px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--tint) 15%, transparent);
+  box-shadow: inset 0 0.5px 0 0 var(--glass-sheen), inset 0 0 0 0.5px color-mix(in srgb, var(--tint) 26%, transparent);
+}
+
+.sheet {
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: saturate(var(--glass-sat)) blur(30px);
+  box-shadow: inset 0 0.5px 0 0 var(--glass-sheen), 0 -12px 40px -12px rgba(0, 0, 0, 0.35);
+}
+.sheet-backdrop { background: rgba(0, 0, 0, 0.32); backdrop-filter: blur(3px); }
+
+.toast {
+  background: color-mix(in srgb, var(--bg-elevated) 62%, transparent);
+  color: var(--label);
+  backdrop-filter: saturate(var(--glass-sat)) blur(24px);
+  box-shadow:
+    inset 0 0.5px 0 0 var(--glass-sheen),
+    inset 0 0 0 0.5px var(--glass-rim),
+    var(--glass-shadow-lift);
+}
+
+/* ------------------------------------------------------------
+   Auftritt — Inhalte steigen gestaffelt ins Bild
+   ------------------------------------------------------------ */
+@keyframes rise {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+.rise { animation: rise 0.5s var(--spring) both; }
+.rise-1 { animation-delay: 0.04s; }
+.rise-2 { animation-delay: 0.08s; }
+.rise-3 { animation-delay: 0.12s; }
+.rise-4 { animation-delay: 0.16s; }
+.rise-5 { animation-delay: 0.2s; }
+
+/* ------------------------------------------------------------
+   Rücksichtnahme: weniger Transparenz, weniger Bewegung
+   ------------------------------------------------------------ */
+@media (prefers-reduced-transparency: reduce) {
+  .glass, .card, .group, .empty, .btn, .field, .segmented, .chip,
+  .nav, .tabbar, .sheet, .toast, .badge {
+    backdrop-filter: none;
+    background: var(--card);
+  }
+  .nav, .sheet { background: var(--bg); }
+  body::before { display: none; }
+  .glass::after, .card::after, .group::after, .empty::after, .tabbar::after { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+  .rise { animation: none; }
+}
+
+/* ------------------------------------------------------------
+   Gestaffelter Auftritt der Seiteninhalte
+   .nav bleibt aussen vor: transform auf sticky bricht das Kleben.
+   ------------------------------------------------------------ */
+.screen > .group,
+.screen > .card,
+.screen > .empty,
+.screen > .section-title { animation: rise 0.5s var(--spring) both; }
+
+.screen > :nth-child(n + 4) { animation-delay: 0.05s; }
+.screen > :nth-child(n + 7) { animation-delay: 0.1s; }
+.screen > :nth-child(n + 10) { animation-delay: 0.15s; }
+.screen > :nth-child(n + 13) { animation-delay: 0.2s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .screen > .group,
+  .screen > .card,
+  .screen > .empty,
+  .screen > .section-title { animation: none; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }

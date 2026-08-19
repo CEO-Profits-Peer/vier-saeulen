@@ -13,15 +13,44 @@ const TABS = [
   { href: "/stats", label: "Stats", Icon: TabStats },
 ];
 
+const isActive = (href: string, pathname: string) =>
+  href === "/" ? pathname === "/" : pathname.startsWith(href);
+
 export function TabBar() {
   const pathname = usePathname();
+  const index = TABS.findIndex((t) => isActive(t.href, pathname));
+
   return (
     <nav className="tabbar" aria-label="Bereiche">
       <div className="tabbar-inner">
+        {/* Eine Pille für alle Tabs: sie ist genau einen Tab breit und wandert
+            per Transform um ihre eigene Breite. Die Federung macht die
+            CSS-Transition — motion diffte die Prozentwerte nicht zuverlässig,
+            und für eine reine Verschiebung braucht es keine Animations-Engine. */}
+        {index >= 0 ? (
+          <span
+            className="tab-glow"
+            aria-hidden
+            style={{
+              width: `${100 / TABS.length}%`,
+              transform: `translateX(${index * 100}%)`,
+            }}
+          >
+            <i />
+          </span>
+        ) : null}
+
         {TABS.map(({ href, label, Icon }) => {
-          const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+          const active = isActive(href, pathname);
           return (
-            <Link key={href} href={href} className="tab" data-active={active} onClick={() => haptic("tap")} aria-current={active ? "page" : undefined}>
+            <Link
+              key={href}
+              href={href}
+              className="tab"
+              data-active={active}
+              onClick={() => haptic("tap")}
+              aria-current={active ? "page" : undefined}
+            >
               <Icon active={active} />
               <span>{label}</span>
             </Link>

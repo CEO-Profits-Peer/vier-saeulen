@@ -36,7 +36,7 @@ export function RunBar() {
         position: "fixed",
         left: 8,
         right: 8,
-        bottom: "calc(var(--tabbar) + env(safe-area-inset-bottom) + 8px)",
+        bottom: "calc(var(--tabbar) + env(safe-area-inset-bottom) + 22px)",
         zIndex: 45,
         maxWidth: 624,
         margin: "0 auto",
@@ -44,16 +44,15 @@ export function RunBar() {
     >
       <div
         style={{
-          background: "color-mix(in srgb, var(--bg-elevated) 92%, transparent)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          border: "0.5px solid var(--separator)",
-          borderRadius: 16,
+          background: "var(--glass-fill-strong)",
+          backdropFilter: "saturate(180%) blur(24px)",
+          WebkitBackdropFilter: "saturate(180%) blur(24px)",
+                    borderRadius: 16,
           padding: "10px 12px",
           display: "flex",
           alignItems: "center",
           gap: 12,
-          boxShadow: "0 8px 24px -12px rgba(0,0,0,.4)",
+          boxShadow: "inset 0 0.5px 0 0 var(--glass-sheen), inset 0 0 0 0.5px var(--glass-rim), var(--glass-shadow-lift)",
         }}
       >
         <button
