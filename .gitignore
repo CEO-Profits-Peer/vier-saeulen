@@ -1,11 +1,16 @@
 node_modules
 .next
 out
-.env
-.env.local
 .DS_Store
 *.tsbuildinfo
 next-env.d.ts
+
+# Secrets — .env.example bleibt drin, die ist nur eine Vorlage
+.env*
+!.env.example
+
+# Vercel
+.vercel
 
 # lokal
 .dev-server.log
