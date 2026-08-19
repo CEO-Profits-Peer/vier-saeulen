@@ -27,7 +27,7 @@ kann ausschließlich die eigene Zeile lesen und schreiben.
   → Email → "Confirm email"** ausschalten.
 
 Unter **Authentication → URL Configuration** die **Site URL** auf deine spätere Vercel-Adresse
-setzen (z. B. `https://vier-saeulen.vercel.app`) — sonst zeigen Bestätigungslinks auf localhost.
+setzen (z. B. `https://routines-peer.vercel.app`) — sonst zeigen Bestätigungslinks auf localhost.
 
 ### Keys kopieren
 
@@ -41,18 +41,37 @@ setzen (z. B. `https://vier-saeulen.vercel.app`) — sonst zeigen Bestätigungsl
 
 ## 2 · Auf Vercel deployen
 
-1. Auf [vercel.com](https://vercel.com) mit GitHub anmelden.
-2. **Add New → Project** → Repository `getNexusNode/steuer-tools` importieren.
-3. Branch auf `claude/phone-project-idea-rpuajf` stellen (oder den Branch vorher in `main` mergen).
-4. Framework wird als **Next.js** erkannt — Einstellungen unverändert lassen.
-5. Unter **Environment Variables** beide Werte eintragen:
+Das Projekt ist bereits angelegt und mit GitHub verbunden:
 
-   | Name | Wert |
-   |---|---|
-   | `NEXT_PUBLIC_SUPABASE_URL` | Project URL aus Supabase |
-   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon key aus Supabase |
+| | |
+|---|---|
+| Vercel-Projekt | `vier-saeulen` (Scope `ceo-profits-peer-s-projects`) |
+| Repository | `CEO-Profits-Peer/vier-saeulen`, Branch `main` |
+| Live-Adresse | `https://routines-peer.vercel.app` |
 
-6. **Deploy**. Nach ein bis zwei Minuten liegt die App unter `https://<projektname>.vercel.app`.
+Jeder Push auf `main` löst automatisch ein neues Production-Deployment aus. Von Hand geht es
+mit `vercel deploy --prod` aus dem Projektordner.
+
+### Deployment Protection ausschalten
+
+Neue Projekte in diesem Team stehen standardmäßig hinter **Vercel Authentication** — dann
+landet jeder Aufruf auf einer Vercel-Login-Seite, und auf dem Handy ist die App nicht
+erreichbar. Einmalig abschalten:
+
+**Vercel → Projekt `vier-saeulen` → Settings → Deployment Protection → Vercel Authentication
+→ auf `Disabled` stellen → Save.**
+
+Danach ist die Adresse öffentlich. Die Daten schützt nicht die Vercel-Sperre, sondern der
+Supabase-Login samt Row Level Security.
+
+### Umgebungsvariablen
+
+Unter **Settings → Environment Variables** beide Werte für alle drei Umgebungen eintragen:
+
+| Name | Wert |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Project URL aus Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon key aus Supabase |
 
 Ohne die beiden Variablen startet die App trotzdem — dann eben ohne Konto und ohne Sync.
 Nachträglich hinzufügen geht jederzeit: Variablen setzen → **Redeploy**.
