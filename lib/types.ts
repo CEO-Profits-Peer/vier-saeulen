@@ -99,6 +99,18 @@ export interface RunState {
   minutes: Partial<Record<SegKind, number>>;
 }
 
+export interface Profile {
+  /** Anzeigename — rein kosmetisch, nichts haengt daran */
+  name?: string;
+  /** Emoji als Avatar; faellt auf den Anfangsbuchstaben zurueck */
+  emoji?: string;
+  /** Lieblingssaeule, faerbt Avatar und Akzente */
+  accent?: Pillar;
+  /** Tag der ersten Nutzung, fuer "dabei seit" */
+  since?: string;
+  updatedAt: number;
+}
+
 export interface AppData {
   v: 2;
   habits: Habit[];
@@ -107,6 +119,8 @@ export interface AppData {
   weeks: Record<string, WeekRec>;
   routines: FlowRoutine[];
   sessions: Session[];
+  /** optional: aeltere Backups kennen das Feld nicht */
+  profile?: Profile;
   updatedAt: number;
 }
 

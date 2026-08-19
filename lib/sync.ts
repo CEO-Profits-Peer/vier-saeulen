@@ -1,7 +1,7 @@
 "use client";
 
 import { supabase } from "./supabase";
-import type { AppData, DayRec, WeekRec } from "./types";
+import type { AppData, DayRec, Profile, WeekRec } from "./types";
 
 const TABLE = "app_state";
 
@@ -42,8 +42,16 @@ export function mergeData(local: AppData, remote: AppData): AppData {
       .sort((x, y) => x.startedAt - y.startedAt)
       .slice(-400)
       .map(({ updatedAt: _drop, ...s }) => s),
+    profile: newerProfile(local.profile, remote.profile),
     updatedAt: Math.max(local.updatedAt, remote.updatedAt),
   };
+}
+
+/** Das Profil ist ein einzelner Datensatz — hier gewinnt schlicht der juengere. */
+function newerProfile(a?: Profile, b?: Profile): Profile | undefined {
+  if (!a) return b;
+  if (!b) return a;
+  return (b.updatedAt ?? 0) > (a.updatedAt ?? 0) ? b : a;
 }
 
 export async function pullRemote(userId: string): Promise<AppData | null> {
@@ -58,5 +66,14 @@ export async function pushRemote(userId: string, data: AppData): Promise<void> {
   const { error } = await supabase
     .from(TABLE)
     .upsert({ user_id: userId, data, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+  if (error) throw error;
+}
+
+/** Loescht die eigene Zeile in der Cloud. Row Level Security erlaubt genau das
+ *  und nichts daneben — das Auth-Konto selbst bleibt bestehen, dafuer braeuchte
+ *  es Rechte, die eine oeffentliche App nicht haben darf. */
+export async function deleteRemote(userId: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from(TABLE).delete().eq("user_id", userId);
   if (error) throw error;
 }

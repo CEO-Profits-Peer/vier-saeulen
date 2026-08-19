@@ -5,7 +5,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import { blankData, seedRoutines } from "./seed";
 import { isoWeek, todayKey, uid } from "./date";
 import { dayStats } from "./score";
-import type { AppData, Checkin, DayRec, FlowRoutine, Goal, Habit, RunState, Segment, Session } from "./types";
+import type { AppData, Checkin, DayRec, FlowRoutine, Goal, Habit, Profile, RunState, Segment, Session } from "./types";
 
 const STORE_KEY = "viersaeulen.v2";
 
@@ -31,6 +31,8 @@ interface Store {
   toggleTask: (id: string) => void;
   removeTask: (id: string) => void;
   setCheckin: (patch: Checkin) => void;
+
+  setProfile: (patch: Partial<Omit<Profile, "updatedAt">>) => void;
 
   addGoal: (g: Omit<Goal, "id" | "updatedAt">) => void;
   updateGoal: (id: string, patch: Partial<Goal>) => void;
@@ -134,6 +136,19 @@ export const useStore = create<Store>()(
           rec.updatedAt = Date.now();
           return { data: touch({ ...s.data, days: { ...s.data.days, [key]: rec } }) };
         }),
+
+      setProfile: (patch) =>
+        set((s) => ({
+          data: touch({
+            ...s.data,
+            profile: {
+              since: s.data.profile?.since ?? todayKey(),
+              ...s.data.profile,
+              ...patch,
+              updatedAt: Date.now(),
+            },
+          }),
+        })),
 
       setCheckin: (patch) =>
         set((s) => {

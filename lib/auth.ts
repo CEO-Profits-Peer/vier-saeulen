@@ -52,3 +52,26 @@ export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) throw new Error(authMessage(error.message));
 }
+
+/** Zuruecksetzen-Mail anfordern. Der Link fuehrt zurueck aufs Konto, wo das
+ *  neue Passwort gesetzt wird — detectSessionInUrl loest den Token ein. */
+export async function sendPasswordReset(email: string) {
+  if (!supabase) throw new Error("Cloud ist nicht eingerichtet.");
+  const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/account` : undefined;
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) throw new Error(authMessage(error.message));
+}
+
+export async function updatePassword(password: string) {
+  if (!supabase) throw new Error("Cloud ist nicht eingerichtet.");
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw new Error(authMessage(error.message));
+}
+
+/** Aendert die Adresse erst nach Bestaetigung ueber beide Postfaecher. */
+export async function updateEmail(email: string) {
+  if (!supabase) throw new Error("Cloud ist nicht eingerichtet.");
+  const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/account` : undefined;
+  const { error } = await supabase.auth.updateUser({ email }, { emailRedirectTo: redirectTo });
+  if (error) throw new Error(authMessage(error.message));
+}

@@ -2,11 +2,13 @@
 
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/lib/auth";
+import { useNet, netMessage } from "@/lib/net";
 import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { mergeData, pullRemote, pushRemote } from "@/lib/sync";
 import { FlowLayer } from "./FlowLayer";
 import { ToastHost } from "./Toast";
+import { UpdatePrompt } from "./UpdatePrompt";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const setSession = useAuth((s) => s.setSession);
@@ -20,6 +22,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const onLoad = () => void navigator.serviceWorker.register("/sw.js").catch(() => {});
     window.addEventListener("load", onLoad);
     return () => window.removeEventListener("load", onLoad);
+  }, []);
+
+  /* Netzstatus. navigator.onLine gibt es beim Server-Render nicht, deshalb
+     erst im Effekt setzen — sonst weicht die Hydration ab. */
+  useEffect(() => {
+    const apply = () => useNet.getState().setOnline(navigator.onLine);
+    apply();
+    window.addEventListener("online", apply);
+    window.addEventListener("offline", apply);
+    return () => {
+      window.removeEventListener("online", apply);
+      window.removeEventListener("offline", apply);
+    };
   }, []);
 
   /* Anmeldestatus */
@@ -42,6 +57,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const run = async (userId: string) => {
       if (syncing.current) return;
       syncing.current = true;
+      useNet.getState().setSync("syncing");
       try {
         const remote = await pullRemote(userId);
         const local = useStore.getState().data;
@@ -49,8 +65,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
         useStore.getState().setData(merged);
         await pushRemote(userId, merged);
         useStore.getState().setLastSynced(Date.now());
-      } catch {
-        /* offline oder Tabelle fehlt — die App läuft lokal weiter */
+        useNet.getState().setSync("ok");
+      } catch (err) {
+        /* Offline oder Tabelle fehlt — die App läuft lokal weiter. Anders als
+           bisher verschwindet der Fehler nicht lautlos: die Konto-Seite zeigt
+           ihn im Klartext. */
+        useNet.getState().setSync("error", netMessage(err));
       } finally {
         syncing.current = false;
       }
@@ -62,14 +82,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const current = useAuth.getState().user?.id;
     if (current) void run(current);
 
-    const onFocus = () => {
+    const retry = () => {
       const id = useAuth.getState().user?.id;
-      if (id && !document.hidden) void run(id);
+      if (id && !document.hidden && navigator.onLine) void run(id);
     };
-    document.addEventListener("visibilitychange", onFocus);
+    document.addEventListener("visibilitychange", retry);
+    /* Sobald das Netz zurückkommt, wird sofort nachgeholt statt erst beim
+       nächsten Fokuswechsel. */
+    window.addEventListener("online", retry);
     return () => {
       unsub();
-      document.removeEventListener("visibilitychange", onFocus);
+      document.removeEventListener("visibilitychange", retry);
+      window.removeEventListener("online", retry);
     };
   }, []);
 
@@ -80,13 +104,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
       if (state.data === prev.data) return;
       const userId = useAuth.getState().user?.id;
       if (!userId) return;
+      useNet.getState().setPending(true);
       if (pushTimer.current) clearTimeout(pushTimer.current);
       pushTimer.current = setTimeout(async () => {
+        useNet.getState().setSync("syncing");
         try {
           await pushRemote(userId, useStore.getState().data);
           useStore.getState().setLastSynced(Date.now());
-        } catch {
-          /* nächster Versuch beim nächsten Öffnen */
+          useNet.getState().setSync("ok");
+        } catch (err) {
+          /* Bleibt offen und geht beim nächsten Online-Ereignis oder
+             Fokuswechsel mit — lokal sind die Daten längst sicher. */
+          useNet.getState().setSync("error", netMessage(err));
         }
       }, 3500);
     });
@@ -97,6 +126,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       {children}
       <FlowLayer />
       <ToastHost />
+      <UpdatePrompt />
     </>
   );
 }

@@ -10,12 +10,44 @@
   "theme_color": "#007aff",
   "lang": "de",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Flow starten", "url": "/flow", "short_name": "Flow" },
-    { "name": "Stats", "url": "/stats", "short_name": "Stats" }
+    {
+      "name": "Flow starten",
+      "url": "/flow",
+      "short_name": "Flow"
+    },
+    {
+      "name": "Stats",
+      "url": "/stats",
+      "short_name": "Stats"
+    }
+  ],
+  "id": "/",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "categories": [
+    "productivity",
+    "lifestyle"
   ]
 }

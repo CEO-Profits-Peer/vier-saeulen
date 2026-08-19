@@ -459,9 +459,9 @@ a { color: var(--tint); text-decoration: none; }
   --glass-blur: 20px;
   --glass-sat: 180%;
 
-  --glass-fill: rgba(255, 255, 255, 0.55);
-  --glass-fill-strong: rgba(255, 255, 255, 0.74);
-  --glass-fill-soft: rgba(255, 255, 255, 0.36);
+  --glass-fill: rgba(255, 255, 255, 0.68);
+  --glass-fill-strong: rgba(255, 255, 255, 0.82);
+  --glass-fill-soft: rgba(255, 255, 255, 0.5);
 
   /* Specular — die helle Kante oben, wo Licht auf die Scheibe trifft */
   --glass-sheen: rgba(255, 255, 255, 0.9);
@@ -478,9 +478,9 @@ a { color: var(--tint); text-decoration: none; }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --glass-fill: rgba(62, 62, 68, 0.5);
-    --glass-fill-strong: rgba(62, 62, 68, 0.72);
-    --glass-fill-soft: rgba(62, 62, 68, 0.32);
+    --glass-fill: rgba(62, 62, 68, 0.62);
+    --glass-fill-strong: rgba(62, 62, 68, 0.8);
+    --glass-fill-soft: rgba(62, 62, 68, 0.46);
     --glass-sheen: rgba(255, 255, 255, 0.2);
     --glass-rim: rgba(255, 255, 255, 0.11);
     --glass-lens: rgba(255, 255, 255, 0.09);
@@ -492,9 +492,9 @@ a { color: var(--tint); text-decoration: none; }
 }
 
 :root[data-theme="dark"] {
-  --glass-fill: rgba(62, 62, 68, 0.5);
-  --glass-fill-strong: rgba(62, 62, 68, 0.72);
-  --glass-fill-soft: rgba(62, 62, 68, 0.32);
+  --glass-fill: rgba(62, 62, 68, 0.62);
+  --glass-fill-strong: rgba(62, 62, 68, 0.8);
+  --glass-fill-soft: rgba(62, 62, 68, 0.46);
   --glass-sheen: rgba(255, 255, 255, 0.2);
   --glass-rim: rgba(255, 255, 255, 0.11);
   --glass-lens: rgba(255, 255, 255, 0.09);
@@ -537,13 +537,19 @@ body::before {
 /* ------------------------------------------------------------
    Die Scheibe selbst
    ------------------------------------------------------------ */
+/* Bewusst ohne backdrop-filter: der Aurora-Hintergrund ist fixiert, also
+   muesste der Filter fuer jede Karte bei jedem Scroll-Frame neu komponiert
+   werden — genau das ruckelt auf dem Handy. Die Aurora scheint durch die
+   Transparenz ohnehin durch, Lichtkante und Brechungsrand machen den Rest.
+   Echte Unschaerfe bleibt der fixierten Chrome vorbehalten (Nav, Tab-Leiste,
+   Sheet, Toast), die sich nicht mitbewegt und einmal komponiert wird. */
 .glass,
 .card,
 .group,
 .empty {
   position: relative;
   background: var(--glass-fill);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  isolation: isolate;
   box-shadow:
     inset 0 0.5px 0 0 var(--glass-sheen),
     inset 0 0 0 0.5px var(--glass-rim),
@@ -576,7 +582,6 @@ body::before {
    ------------------------------------------------------------ */
 .btn {
   background: var(--glass-fill-strong);
-  backdrop-filter: blur(12px) saturate(var(--glass-sat));
   box-shadow:
     inset 0 0.5px 0 0 var(--glass-sheen),
     inset 0 0 0 0.5px var(--glass-rim),
@@ -605,7 +610,6 @@ body::before {
 
 .field {
   background: var(--glass-fill-soft);
-  backdrop-filter: blur(12px) saturate(140%);
   box-shadow: inset 0 0 0 0.5px var(--glass-rim), inset 0 1px 2px -1px var(--glass-under);
   transition: box-shadow 0.2s ease;
 }
@@ -618,7 +622,6 @@ body::before {
 
 .segmented {
   background: var(--glass-fill-soft);
-  backdrop-filter: blur(12px) saturate(140%);
   box-shadow: inset 0 0 0 0.5px var(--glass-rim);
 }
 .segmented button[aria-selected="true"] {
@@ -631,7 +634,6 @@ body::before {
 
 .chip {
   background: var(--glass-fill-soft);
-  backdrop-filter: blur(10px) saturate(140%);
   box-shadow: inset 0 0.5px 0 0 var(--glass-sheen), inset 0 0 0 0.5px var(--glass-rim);
   transition: transform 0.32s var(--spring), background 0.2s ease, box-shadow 0.2s ease;
 }
@@ -647,7 +649,7 @@ body::before {
     0 4px 14px -6px color-mix(in srgb, var(--p) 70%, transparent);
 }
 
-.badge { backdrop-filter: blur(8px); box-shadow: inset 0 0 0 0.5px var(--glass-rim); }
+.badge { box-shadow: inset 0 0 0 0.5px var(--glass-rim); }
 
 .checkbox { transition: background 0.24s ease, border-color 0.24s ease, box-shadow 0.3s ease, transform 0.4s var(--spring); }
 .checked .checkbox {
@@ -717,7 +719,9 @@ body::before {
   backdrop-filter: saturate(var(--glass-sat)) blur(30px);
   box-shadow: inset 0 0.5px 0 0 var(--glass-sheen), 0 -12px 40px -12px rgba(0, 0, 0, 0.35);
 }
-.sheet-backdrop { background: rgba(0, 0, 0, 0.32); backdrop-filter: blur(3px); }
+/* Kein eigener Filter: das Sheet darin hat einen, und zwei uebereinander
+   heisst doppelt komponieren fuer ein Ergebnis, das niemand sieht. */
+.sheet-backdrop { background: rgba(0, 0, 0, 0.38); }
 
 .toast {
   background: color-mix(in srgb, var(--bg-elevated) 62%, transparent);
@@ -746,10 +750,61 @@ body::before {
 /* ------------------------------------------------------------
    Rücksichtnahme: weniger Transparenz, weniger Bewegung
    ------------------------------------------------------------ */
+/* ------------------------------------------------------------
+   Netzleiste — offline bzw. neue Version, ueber der Tab-Kapsel
+   ------------------------------------------------------------ */
+.netbar {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(var(--tabbar) + 22px + env(safe-area-inset-bottom));
+  max-width: 616px;
+  margin: 0 auto;
+  z-index: 46;
+  border-radius: 16px;
+  padding: 9px 14px;
+  background: var(--glass-fill-strong);
+  backdrop-filter: saturate(var(--glass-sat)) blur(20px);
+  box-shadow:
+    inset 0 0.5px 0 0 var(--glass-sheen),
+    inset 0 0 0 0.5px var(--glass-rim),
+    var(--glass-shadow-lift);
+  font-size: 13.5px;
+  font-weight: 500;
+}
+/* RunBar belegt bei laufender Sequenz die Etage darunter */
+.netbar.with-run { bottom: calc(var(--tabbar) + 94px + env(safe-area-inset-bottom)); }
+.netbar-text { display: inline-flex; align-items: center; gap: 8px; color: var(--label-2); }
+.netbar-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--money);
+  flex: none;
+  animation: netpulse 2s ease-in-out infinite;
+}
+.netbar-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+}
+.netbar-cta { color: var(--tint); font-weight: 600; flex: none; }
+
+@keyframes netpulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .netbar-dot { animation: none; }
+}
+
 @media (prefers-reduced-transparency: reduce) {
-  .glass, .card, .group, .empty, .btn, .field, .segmented, .chip,
-  .nav, .tabbar, .sheet, .toast, .badge {
-    backdrop-filter: none;
+  .nav, .tabbar, .sheet, .toast, .netbar { backdrop-filter: none; }
+  .glass, .card, .group, .empty, .btn, .field, .segmented, .chip, .tabbar, .toast, .netbar {
     background: var(--card);
   }
   .nav, .sheet { background: var(--bg); }
