@@ -1,0 +1,62 @@
+"use client";
+
+import { supabase } from "./supabase";
+import type { AppData, DayRec, WeekRec } from "./types";
+
+const TABLE = "app_state";
+
+type Keyed = { id: string; updatedAt: number };
+
+function mergeById<T extends Keyed>(a: T[], b: T[]): T[] {
+  const map = new Map<string, T>();
+  for (const item of a) map.set(item.id, item);
+  for (const item of b) {
+    const cur = map.get(item.id);
+    if (!cur || (item.updatedAt ?? 0) > (cur.updatedAt ?? 0)) map.set(item.id, item);
+  }
+  return [...map.values()];
+}
+
+function mergeRecords<T extends { updatedAt: number }>(a: Record<string, T>, b: Record<string, T>): Record<string, T> {
+  const out: Record<string, T> = { ...a };
+  for (const [key, val] of Object.entries(b)) {
+    const cur = out[key];
+    if (!cur || (val.updatedAt ?? 0) > (cur.updatedAt ?? 0)) out[key] = val;
+  }
+  return out;
+}
+
+/** Letzter Schreibvorgang je Eintrag gewinnt — nicht der letzte Gerätestand. */
+export function mergeData(local: AppData, remote: AppData): AppData {
+  return {
+    v: 2,
+    habits: mergeById(local.habits, remote.habits),
+    goals: mergeById(local.goals, remote.goals),
+    routines: mergeById(local.routines, remote.routines),
+    days: mergeRecords<DayRec>(local.days, remote.days),
+    weeks: mergeRecords<WeekRec>(local.weeks, remote.weeks),
+    sessions: mergeById(
+      local.sessions.map((s) => ({ ...s, updatedAt: s.endedAt })),
+      remote.sessions.map((s) => ({ ...s, updatedAt: s.endedAt })),
+    )
+      .sort((x, y) => x.startedAt - y.startedAt)
+      .slice(-400)
+      .map(({ updatedAt: _drop, ...s }) => s),
+    updatedAt: Math.max(local.updatedAt, remote.updatedAt),
+  };
+}
+
+export async function pullRemote(userId: string): Promise<AppData | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from(TABLE).select("data").eq("user_id", userId).maybeSingle();
+  if (error) throw error;
+  return (data?.data as AppData) ?? null;
+}
+
+export async function pushRemote(userId: string, data: AppData): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase
+    .from(TABLE)
+    .upsert({ user_id: userId, data, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+  if (error) throw error;
+}

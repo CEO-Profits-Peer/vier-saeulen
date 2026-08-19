@@ -1,0 +1,341 @@
+"use client";
+
+import Link from "next/link";
+import { motion } from "motion/react";
+import { useMemo, useState } from "react";
+import { Nav } from "@/components/Nav";
+import { Ring } from "@/components/Ring";
+import { Hydrated } from "@/components/Hydrated";
+import { Check, Chevron, Play, Plus } from "@/components/Icons";
+import { toast } from "@/components/Toast";
+import { haptic } from "@/lib/haptics";
+import { useStore } from "@/lib/store";
+import { useToday } from "@/lib/useToday";
+import { dayStats, habitsFor, levelInfo, liveRoutines, streak, totalXP } from "@/lib/score";
+import { fmtLong, fromKey } from "@/lib/date";
+import { BKEYS, BLOCKS, DAY_ABBR, PILLARS, PKEYS, STREAK_MIN, type Block } from "@/lib/types";
+
+export default function TodayPage() {
+  return (
+    <Hydrated>
+      <Today />
+    </Hydrated>
+  );
+}
+
+function Today() {
+  const key = useToday();
+  const data = useStore((s) => s.data);
+  const toggleHabitDone = useStore((s) => s.toggleHabitDone);
+  const addTask = useStore((s) => s.addTask);
+  const toggleTask = useStore((s) => s.toggleTask);
+  const removeTask = useStore((s) => s.removeTask);
+  const setCheckin = useStore((s) => s.setCheckin);
+  const [taskText, setTaskText] = useState("");
+
+  const stats = useMemo(() => dayStats(data, key), [data, key]);
+  const rec = data.days[key];
+  const list = useMemo(() => habitsFor(data, key), [data, key]);
+  const routines = liveRoutines(data);
+  const xp = useMemo(() => totalXP(data), [data]);
+  const level = levelInfo(xp);
+  const days = streak(data);
+
+  const hour = new Date().getHours();
+  const nowBlock: Block = hour < 10 ? "morning" : hour < 14 ? "school" : hour < 19 ? "afternoon" : "evening";
+  const order = [...BKEYS.slice(BKEYS.indexOf(nowBlock)), ...BKEYS.slice(0, BKEYS.indexOf(nowBlock))];
+  const next = order.flatMap((b) => list.filter((h) => h.block === b && !rec?.done?.[h.id]))[0];
+
+  const note =
+    stats.total === 0
+      ? "Heute steht nichts im System — leg unter System Routinen an."
+      : stats.pct >= 100
+        ? "Perfekter Tag. Genau die Sorte, die Streaks baut."
+        : stats.pct >= STREAK_MIN
+          ? "Über der Streak-Grenze. Alles ab hier ist Bonus."
+          : stats.pct > 0
+            ? `Noch ${STREAK_MIN - stats.pct} Punkte-Prozent bis zur Streak.`
+            : "Noch nichts abgehakt — fang mit einer Kleinigkeit an.";
+
+  const tasks = rec?.tasks ?? [];
+  const checkin = rec?.checkin ?? {};
+
+  return (
+    <>
+      <Nav
+        title="Heute"
+        subtitle={fmtLong(fromKey(key))}
+        right={
+          <Link href="/account" className="badge" aria-label="Konto und Daten">
+            ⚙︎ Konto
+          </Link>
+        }
+      />
+
+      {/* Tagesscore */}
+      <div className="card">
+        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+          <div>
+            <div style={{ fontSize: 56, fontWeight: 700, letterSpacing: "-0.04em", lineHeight: 1 }} className="mono">
+              {stats.pct}
+              <span style={{ fontSize: 22, color: "var(--label-2)" }}>%</span>
+            </div>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: 14, color: "var(--label-2)" }}>{note}</p>
+            <div style={{ display: "flex", gap: 2, height: 8, marginTop: 12, background: "var(--fill)", borderRadius: 999, overflow: "hidden" }}>
+              {PKEYS.map((p) => (
+                <motion.i
+                  key={p}
+                  initial={false}
+                  animate={{ width: `${stats.total ? (stats.by[p].done / stats.total) * 100 : 0}%` }}
+                  transition={{ type: "spring", stiffness: 140, damping: 22 }}
+                  style={{ background: `var(${PILLARS[p].varName})`, borderRadius: 999, display: "block" }}
+                />
+              ))}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 13, color: "var(--label-2)" }} className="mono">
+              <span>{stats.done} / {stats.total} Punkte</span>
+              <span>{days > 0 ? `🔥 ${days} Tage` : `Level ${level.lvl}`}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginTop: 18 }}>
+          {PKEYS.map((p) => {
+            const b = stats.by[p];
+            const pct = b.total ? Math.round((b.done / b.total) * 100) : 0;
+            return (
+              <div key={p} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                <Ring pct={pct} color={`var(${PILLARS[p].varName})`} size={58} stroke={6}>
+                  <span className="mono" style={{ fontSize: 12, fontWeight: 600 }}>{b.total ? `${pct}%` : "–"}</span>
+                </Ring>
+                <span style={{ fontSize: 11, color: "var(--label-2)", fontWeight: 500 }}>{PILLARS[p].label}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Als Nächstes */}
+      {next ? (
+        <motion.button
+          layout
+          className={`card ${PILLARS[next.pillar].cls}`}
+          onClick={() => {
+            toggleHabitDone(next.id);
+            haptic("success");
+          }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            width: "100%",
+            textAlign: "left",
+            background: "color-mix(in srgb, var(--p) 12%, var(--card))",
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--p)", letterSpacing: "0.02em" }}>
+              ALS NÄCHSTES · {BLOCKS[next.block].toUpperCase()}
+            </div>
+            <div style={{ fontSize: 17, fontWeight: 600, marginTop: 2 }}>{next.name}</div>
+          </div>
+          <span style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--p)", display: "grid", placeItems: "center", flex: "none" }}>
+            <Check size={18} />
+          </span>
+        </motion.button>
+      ) : stats.total > 0 ? (
+        <div className="card" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 22 }}>✓</span>
+          <div>
+            <div style={{ fontWeight: 600 }}>Alles abgehakt</div>
+            <div style={{ fontSize: 13, color: "var(--label-2)" }}>Tag geschlossen. Der Rest ist Bonus.</div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Flow-Schnellstart */}
+      {routines.length ? (
+        <>
+          <p className="section-title">Flow</p>
+          <div className="group">
+            {routines.slice(0, 2).map((r) => {
+              const mins = r.segments.reduce((a, s) => a + s.minutes, 0);
+              return (
+                <Link key={r.id} href={`/flow?start=${r.id}`} className="row tappable" onClick={() => haptic("tap")}>
+                  <span style={{ fontSize: 20 }}>{r.emoji}</span>
+                  <span className="row-title">
+                    {r.name}
+                    <span className="row-sub">{r.segments.length} Blöcke · {mins} Min</span>
+                  </span>
+                  <span style={{ color: "var(--tint)" }}><Play size={18} /></span>
+                </Link>
+              );
+            })}
+            <Link href="/flow" className="row tappable">
+              <span className="row-title" style={{ color: "var(--tint)" }}>Alle Sequenzen</span>
+              <span className="chevron"><Chevron /></span>
+            </Link>
+          </div>
+        </>
+      ) : null}
+
+      {/* Routinen nach Tageszeit */}
+      {BKEYS.map((b) => {
+        const hs = list.filter((h) => h.block === b);
+        if (!hs.length) return null;
+        const done = hs.filter((h) => rec?.done?.[h.id]).length;
+        return (
+          <div key={b}>
+            <p className="section-title" style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>{BLOCKS[b]}</span>
+              <span className="mono" style={{ textTransform: "none" }}>{done}/{hs.length}</span>
+            </p>
+            <div className="group">
+              {hs.map((h) => {
+                const isDone = Boolean(rec?.done?.[h.id]);
+                return (
+                  <button
+                    key={h.id}
+                    className={`row tappable ${PILLARS[h.pillar].cls}${isDone ? " checked" : ""}`}
+                    onClick={() => {
+                      toggleHabitDone(h.id);
+                      haptic(isDone ? "tap" : "success");
+                    }}
+                  >
+                    <span className="checkbox"><Check size={15} /></span>
+                    <span className="row-title">{h.name}</span>
+                    <span className="row-value mono">{h.pts}</span>
+                    <span className="dot" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      {list.length === 0 ? (
+        <div className="empty">
+          Für heute ({DAY_ABBR[fromKey(key).getDay()]}) ist keine Routine geplant.
+          <br />
+          <Link href="/system">Im System anlegen</Link>
+        </div>
+      ) : null}
+
+      {/* Extra-Aufgaben */}
+      <p className="section-title">Heute extra</p>
+      <div className="group">
+        {tasks.map((t) => (
+          <div key={t.id} className={`row${t.done ? " checked" : ""}`} style={{ ["--p" as string]: "var(--label-2)" }}>
+            <button className="checkbox" onClick={() => { toggleTask(t.id); haptic("tap"); }} aria-label={t.done ? "Als offen markieren" : "Als erledigt markieren"}>
+              <Check size={15} />
+            </button>
+            <span className="row-title">{t.text}</span>
+            <button className="btn plain" onClick={() => { removeTask(t.id); haptic("tap"); }} aria-label="Aufgabe löschen" style={{ color: "var(--label-3)" }}>
+              ✕
+            </button>
+          </div>
+        ))}
+        <form
+          className="row"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const text = taskText.trim();
+            if (!text) return;
+            addTask(text);
+            setTaskText("");
+            haptic("tap");
+          }}
+        >
+          <span style={{ color: "var(--tint)" }}><Plus /></span>
+          <input
+            value={taskText}
+            onChange={(e) => setTaskText(e.target.value)}
+            placeholder="Einmalige Aufgabe für heute"
+            style={{ flex: 1, background: "none", border: 0, fontSize: 16, minWidth: 0 }}
+            aria-label="Neue Aufgabe"
+          />
+          {taskText ? <button className="btn plain" type="submit">Add</button> : null}
+        </form>
+      </div>
+
+      {/* Check-in */}
+      <p className="section-title">Check-in</p>
+      <div className="card">
+        <Scale label="Energie" value={checkin.energy ?? null} onChange={(v) => setCheckin({ energy: v })} />
+        <Scale label="Fokus" value={checkin.focus ?? null} onChange={(v) => setCheckin({ focus: v })} />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 14 }}>
+          <div>
+            <p className="field-label">Schlaf (h)</p>
+            <input
+              className="field"
+              style={{ background: "var(--card-2)" }}
+              type="number"
+              inputMode="decimal"
+              step="0.5"
+              value={checkin.sleep ?? ""}
+              onChange={(e) => setCheckin({ sleep: e.target.value === "" ? null : Number(e.target.value) })}
+              placeholder="8"
+            />
+          </div>
+          <div>
+            <p className="field-label">Screen (h)</p>
+            <input
+              className="field"
+              style={{ background: "var(--card-2)" }}
+              type="number"
+              inputMode="decimal"
+              step="0.5"
+              value={checkin.screen ?? ""}
+              onChange={(e) => setCheckin({ screen: e.target.value === "" ? null : Number(e.target.value) })}
+              placeholder="3"
+            />
+          </div>
+        </div>
+        <p className="field-label" style={{ marginTop: 6 }}>Win des Tages</p>
+        <input
+          className="field"
+          style={{ background: "var(--card-2)" }}
+          value={checkin.win ?? ""}
+          onChange={(e) => setCheckin({ win: e.target.value })}
+          placeholder="Was lief heute gut?"
+        />
+        <p className="field-label">Notiz</p>
+        <textarea
+          className="field"
+          style={{ background: "var(--card-2)", minHeight: 88, resize: "vertical" }}
+          value={checkin.note ?? ""}
+          onChange={(e) => setCheckin({ note: e.target.value })}
+          placeholder="Gedanken, Learnings, was morgen besser läuft…"
+        />
+        <p style={{ fontSize: 13, color: "var(--label-2)", margin: 0 }}>Wird automatisch gespeichert.</p>
+      </div>
+    </>
+  );
+}
+
+function Scale({ label, value, onChange }: { label: string; value: number | null; onChange: (v: number | null) => void }) {
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <p className="field-label">{label}</p>
+      <div style={{ display: "flex", gap: 6 }}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            className="chip mono"
+            style={{ flex: 1, justifyContent: "center", minHeight: 44 }}
+            aria-pressed={value === n}
+            onClick={() => {
+              onChange(value === n ? null : n);
+              haptic("tap");
+            }}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
