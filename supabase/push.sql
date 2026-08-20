@@ -100,8 +100,9 @@ revoke all on function public.mark_reminders_sent(uuid[]) from public, anon, aut
 --   alter database postgres set app.push_url    = 'https://routines-peer.vercel.app/api/push/send';
 --   alter database postgres set app.push_secret = '<dein CRON_SECRET>';
 --
--- Danach diese Datei erneut laufen lassen. current_setting(..., true) gibt
--- null zurück statt zu scheitern, falls einer fehlt — dann passiert nichts.
+-- Die Werte werden bei jedem Lauf frisch gelesen, ein zweiter Durchlauf dieser
+-- Datei ist also nicht nötig. current_setting(..., true) gibt null zurück statt
+-- zu scheitern, falls einer fehlt — dann bleiben die Erinnerungen einfach aus.
 -- ============================================================
 create or replace function public.dispatch_reminders()
 returns void
