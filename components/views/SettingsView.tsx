@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { Nav } from "@/components/Nav";
 import { InstallButton } from "@/components/InstallButton";
+import { Reminders } from "@/components/Reminders";
 import { toast } from "@/components/Toast";
 import { haptic } from "@/lib/haptics";
 import {
@@ -434,6 +435,9 @@ export function SettingsView({ below }: { below?: ReactNode }) {
       )}
 
       {/* Daten */}
+      <p className="section-title">Erinnerungen</p>
+      <Reminders />
+
       <p className="section-title">Daten</p>
       <div className="group">
         <button className="row tappable" onClick={() => { download(`vier-saeulen-${todayKey()}.json`, JSON.stringify(data, null, 2), "application/json"); haptic("tap"); }}>

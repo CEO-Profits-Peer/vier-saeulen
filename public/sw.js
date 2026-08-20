@@ -6,7 +6,7 @@
  * VERSION bei jedem Release hochzählen — davon hängt ab, ob alte Caches
  * beim Aktivieren weggeräumt werden.
  */
-const VERSION = "v4";
+const VERSION = "v5";
 const SHELL = `viersaeulen-shell-${VERSION}`;
 const ASSETS = `viersaeulen-assets-${VERSION}`;
 
@@ -128,5 +128,52 @@ self.addEventListener("fetch", (event) => {
       const hit = await caches.match(request);
       return hit || Response.error();
     }),
+  );
+});
+
+
+/* ============================================================
+   Push — Erinnerungen
+   ============================================================ */
+
+self.addEventListener("push", (event) => {
+  /* Ohne lesbare Nutzlast lieber eine schlichte Erinnerung als gar keine:
+     manche Push-Dienste stellen leere Wecknachrichten zu. */
+  let data = { title: "Vier Säulen", body: "Tag abschließen — Check-in offen.", url: "/?checkin=1", tag: "daily-checkin" };
+  try {
+    if (event.data) data = { ...data, ...event.data.json() };
+  } catch {
+    /* Nutzlast war kein JSON — Vorgabe steht schon. */
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      tag: data.tag,
+      renotify: false,
+      data: { url: data.url },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = event.notification.data?.url || "/";
+
+  event.waitUntil(
+    (async () => {
+      const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      /* Ein offenes Fenster wiederverwenden, statt ein zweites aufzumachen. */
+      for (const client of clients) {
+        if (new URL(client.url).origin === self.location.origin) {
+          await client.focus();
+          if ("navigate" in client) await client.navigate(target).catch(() => undefined);
+          return;
+        }
+      }
+      await self.clients.openWindow(target);
+    })(),
   );
 });
