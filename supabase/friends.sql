@@ -107,11 +107,15 @@ as $$
   limit 1;
 $$;
 
-revoke all on function public.find_by_handle(text) from public;
+-- Supabase vergibt per Default-Privileg automatisch execute an anon und
+-- authenticated. Ein revoke von public entfernt das NICHT — anon muss
+-- ausdruecklich genannt werden, sonst laesst sich die Funktion ohne
+-- Anmeldung aufrufen.
+revoke all on function public.find_by_handle(text) from public, anon;
 grant execute on function public.find_by_handle(text) to authenticated;
-revoke all on function public.is_friend(uuid) from public;
+revoke all on function public.is_friend(uuid) from public, anon;
 grant execute on function public.is_friend(uuid) to authenticated;
-revoke all on function public.is_linked(uuid) from public;
+revoke all on function public.is_linked(uuid) from public, anon;
 grant execute on function public.is_linked(uuid) to authenticated;
 
 -- ============================================================
@@ -195,6 +199,8 @@ begin
   return new;
 end;
 $$;
+
+revoke all on function public.prune_daily_shares() from public, anon, authenticated;
 
 drop trigger if exists daily_shares_prune on public.daily_shares;
 create trigger daily_shares_prune

@@ -16,3 +16,6 @@ next-env.d.ts
 .dev-server.log
 .claude/
 viersaeulen.zip
+
+# Enthaelt Secrets — gehoert nie ins Repo
+*.local.sql
