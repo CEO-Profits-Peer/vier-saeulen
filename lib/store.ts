@@ -5,6 +5,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import { blankData, seedRoutines } from "./seed";
 import { isoWeek, todayKey, uid } from "./date";
 import { dayStats } from "./score";
+import { MAX_SKIPS_PER_DAY } from "./types";
 import type { AppData, Checkin, DayRec, FlowRoutine, Goal, Habit, Profile, RunState, Segment, Session } from "./types";
 
 const STORE_KEY = "viersaeulen.v2";
@@ -22,6 +23,7 @@ interface Store {
   setLastSynced: (t: number | null) => void;
 
   toggleHabitDone: (habitId: string) => void;
+  toggleHabitSkip: (habitId: string) => void;
   addHabit: (h: Omit<Habit, "id" | "updatedAt">) => void;
   updateHabit: (id: string, patch: Partial<Habit>) => void;
   removeHabit: (id: string) => void;
@@ -77,8 +79,46 @@ export const useStore = create<Store>()(
           const days = { ...s.data.days };
           const rec: DayRec = { ...(days[key] ?? emptyDay()) };
           rec.done = { ...rec.done };
-          if (rec.done[habitId]) delete rec.done[habitId];
-          else rec.done[habitId] = true;
+          if (rec.done[habitId]) {
+            delete rec.done[habitId];
+          } else {
+            rec.done[habitId] = true;
+            /* Wer sie doch macht, hebt das Auslassen damit auf. */
+            if (rec.skipped?.[habitId]) {
+              const skipped = { ...rec.skipped };
+              delete skipped[habitId];
+              rec.skipped = skipped;
+            }
+          }
+          rec.updatedAt = Date.now();
+          days[key] = rec;
+          const next = touch({ ...s.data, days });
+          days[key] = { ...rec, t: dayStats(next, key).total };
+          return { data: touch({ ...next, days: { ...days } }) };
+        }),
+
+      /** Laesst eine Routine fuer heute aus. Der Deckel steckt bewusst hier und
+       *  nicht nur in der Oberflaeche — sonst liesse er sich umgehen, indem man
+       *  die Aktion von woanders aufruft. */
+      toggleHabitSkip: (habitId) =>
+        set((s) => {
+          const key = todayKey();
+          const days = { ...s.data.days };
+          const rec: DayRec = { ...(days[key] ?? emptyDay()) };
+          const skipped = { ...(rec.skipped ?? {}) };
+
+          if (skipped[habitId]) {
+            delete skipped[habitId];
+          } else {
+            if (Object.keys(skipped).length >= MAX_SKIPS_PER_DAY) return s;
+            skipped[habitId] = true;
+            /* Ausgelassen und erledigt zugleich ergibt keinen Sinn. */
+            const done = { ...rec.done };
+            delete done[habitId];
+            rec.done = done;
+          }
+
+          rec.skipped = skipped;
           rec.updatedAt = Date.now();
           days[key] = rec;
           const next = touch({ ...s.data, days });

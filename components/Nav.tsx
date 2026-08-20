@@ -2,7 +2,19 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 
-export function Nav({ title, subtitle, right }: { title: string; subtitle?: string; right?: ReactNode }) {
+export function Nav({
+  title,
+  subtitle,
+  right,
+  below,
+}: {
+  title: string;
+  subtitle?: string;
+  right?: ReactNode;
+  /** Platz direkt unter dem Titel — dort sitzt z. B. der Umschalter
+   *  zwischen Ziele und Stats, damit er mit dem Titel eine Einheit bildet. */
+  below?: ReactNode;
+}) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -23,6 +35,7 @@ export function Nav({ title, subtitle, right }: { title: string; subtitle?: stri
       </div>
       <h1 className="title-large">{title}</h1>
       {subtitle ? <p className="subtitle">{subtitle}</p> : null}
+      {below ? <div style={{ margin: "0 0 18px" }}>{below}</div> : null}
     </>
   );
 }

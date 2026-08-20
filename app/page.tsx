@@ -8,14 +8,14 @@ import { useMemo, useState } from "react";
 import { Nav } from "@/components/Nav";
 import { Ring } from "@/components/Ring";
 import { Hydrated } from "@/components/Hydrated";
-import { Check, Chevron, Play, Plus } from "@/components/Icons";
+import { Check, Chevron, Play, Plus, SkipDay, Undo } from "@/components/Icons";
 import { toast } from "@/components/Toast";
 import { haptic } from "@/lib/haptics";
 import { useStore } from "@/lib/store";
 import { useToday } from "@/lib/useToday";
 import { dayStats, habitsFor, levelInfo, liveRoutines, streak, totalXP } from "@/lib/score";
 import { fmtLong, fromKey } from "@/lib/date";
-import { BKEYS, BLOCKS, DAY_ABBR, PILLARS, PKEYS, STREAK_MIN, type Block } from "@/lib/types";
+import { BKEYS, BLOCKS, DAY_ABBR, PILLARS, PKEYS, STREAK_MIN, type Block, MAX_SKIPS_PER_DAY } from "@/lib/types";
 
 export default function TodayPage() {
   return (
@@ -29,6 +29,7 @@ function Today() {
   const key = useToday();
   const data = useStore((s) => s.data);
   const toggleHabitDone = useStore((s) => s.toggleHabitDone);
+  const toggleHabitSkip = useStore((s) => s.toggleHabitSkip);
   const addTask = useStore((s) => s.addTask);
   const toggleTask = useStore((s) => s.toggleTask);
   const removeTask = useStore((s) => s.removeTask);
@@ -59,6 +60,9 @@ function Today() {
             ? `Noch ${STREAK_MIN - stats.pct} Punkte-Prozent bis zur Streak.`
             : "Noch nichts abgehakt — fang mit einer Kleinigkeit an.";
 
+  const skipsUsed = Object.keys(rec?.skipped ?? {}).length;
+  const skipsLeft = Math.max(0, MAX_SKIPS_PER_DAY - skipsUsed);
+
   const tasks = rec?.tasks ?? [];
   const checkin = rec?.checkin ?? {};
 
@@ -80,8 +84,8 @@ function Today() {
             >
               ↗ Teilen
             </button>
-            <Link href="/account" className="badge" aria-label="Konto und Daten">
-              ⚙︎ Konto
+            <Link href="/du" className="badge" aria-label="Konto und Einstellungen">
+              ⚙︎ Du
             </Link>
           </>
         }
@@ -207,25 +211,58 @@ function Today() {
           <div key={b}>
             <p className="section-title" style={{ display: "flex", justifyContent: "space-between" }}>
               <span>{BLOCKS[b]}</span>
-              <span className="mono" style={{ textTransform: "none" }}>{done}/{hs.length}</span>
+              <span className="mono" style={{ textTransform: "none" }}>
+                {done}/{hs.filter((h) => !rec?.skipped?.[h.id]).length}
+              </span>
             </p>
             <div className="group">
               {hs.map((h) => {
                 const isDone = Boolean(rec?.done?.[h.id]);
+                const isSkipped = Boolean(rec?.skipped?.[h.id]);
+                const blocked = !isSkipped && skipsLeft < 1;
                 return (
-                  <button
+                  <div
                     key={h.id}
-                    className={`row tappable ${PILLARS[h.pillar].cls}${isDone ? " checked" : ""}`}
-                    onClick={() => {
-                      toggleHabitDone(h.id);
-                      haptic(isDone ? "tap" : "success");
-                    }}
+                    className={`row ${PILLARS[h.pillar].cls}${isDone ? " checked" : ""}${isSkipped ? " skipped" : ""}`}
                   >
-                    <span className="checkbox"><Check size={15} /></span>
-                    <span className="row-title">{h.name}</span>
-                    <span className="row-value mono">{h.pts}</span>
+                    <button
+                      className="row-main"
+                      onClick={() => {
+                        toggleHabitDone(h.id);
+                        haptic(isDone ? "tap" : "success");
+                      }}
+                    >
+                      <span className="checkbox"><Check size={15} /></span>
+                      <span className="row-title">{h.name}</span>
+                      <span className="row-value mono">{h.pts}</span>
+                    </button>
+                    <button
+                      className="row-skip"
+                      aria-pressed={isSkipped}
+                      disabled={blocked}
+                      title={
+                        isSkipped
+                          ? "Doch wieder einplanen"
+                          : blocked
+                            ? `Heute schon ${MAX_SKIPS_PER_DAY} ausgelassen`
+                            : "Heute auslassen — zählt dann nicht ins Tagesziel"
+                      }
+                      aria-label={isSkipped ? `${h.name} wieder einplanen` : `${h.name} heute auslassen`}
+                      onClick={() => {
+                        if (blocked) {
+                          haptic("warn");
+                          toast(`Mehr als ${MAX_SKIPS_PER_DAY} pro Tag wären geschummelt`);
+                          return;
+                        }
+                        toggleHabitSkip(h.id);
+                        haptic("tap");
+                        toast(isSkipped ? "Wieder eingeplant" : "Heute ausgelassen — zählt nicht ins Ziel");
+                      }}
+                    >
+                      {isSkipped ? <Undo /> : <SkipDay />}
+                    </button>
                     <span className="dot" />
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -237,7 +274,7 @@ function Today() {
         <div className="empty">
           Für heute ({DAY_ABBR[fromKey(key).getDay()]}) ist keine Routine geplant.
           <br />
-          <Link href="/system">Im System anlegen</Link>
+          <Link href="/du?t=routinen">Unter Du → Routinen anlegen</Link>
         </div>
       ) : null}
 

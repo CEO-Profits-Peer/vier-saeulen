@@ -43,6 +43,8 @@ export interface Checkin {
 
 export interface DayRec {
   done: Record<string, boolean>;
+  /** Heute bewusst ausgelassen — faellt aus dem Tagesziel, statt es zu druecken */
+  skipped?: Record<string, boolean>;
   tasks: Task[];
   checkin: Checkin;
   /** Zielpunkte des Tages, eingefroren sobald der Tag vorbei ist */
@@ -156,3 +158,6 @@ export const STREAK_MIN = 60;
 /** Ein Joker pro Kalendermonat. Mehr wuerde die Serie bedeutungslos machen. */
 export const JOKERS_PER_MONTH = 1;
 export const MAX_WEEK_PLANS = 3;
+/** Deckel fuers Skippen. Ohne ihn liesse sich jeder Tag auf 100 Prozent
+ *  zurechtskippen und der Score waere nichts mehr wert. */
+export const MAX_SKIPS_PER_DAY = 2;

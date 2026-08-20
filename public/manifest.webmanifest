@@ -41,9 +41,14 @@
       "url": "/flow"
     },
     {
+      "name": "Freunde",
+      "short_name": "Freunde",
+      "url": "/friends"
+    },
+    {
       "name": "Stats",
       "short_name": "Stats",
-      "url": "/stats"
+      "url": "/fortschritt?t=stats"
     }
   ],
   "id": "/",

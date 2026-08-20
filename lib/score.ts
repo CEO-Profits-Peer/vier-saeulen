@@ -15,6 +15,8 @@ export interface DayStats {
   done: number;
   pct: number;
   count: number;
+  /** Wie viele Routinen an dem Tag bewusst ausgelassen wurden */
+  skipped: number;
   by: Record<Pillar, { total: number; done: number }>;
 }
 
@@ -25,7 +27,14 @@ export function dayStats(d: AppData, key: string): DayStats {
   PKEYS.forEach((p) => (by[p] = { total: 0, done: 0 }));
   let total = 0;
   let done = 0;
+  let skipped = 0;
   for (const h of list) {
+    /* Ausgelassenes zaehlt weder oben noch unten mit: es verschwindet aus dem
+       Nenner, statt den Tag zu druecken. */
+    if (rec?.skipped?.[h.id]) {
+      skipped++;
+      continue;
+    }
     total += h.pts;
     by[h.pillar].total += h.pts;
     if (rec?.done?.[h.id]) {
@@ -33,8 +42,17 @@ export function dayStats(d: AppData, key: string): DayStats {
       by[h.pillar].done += h.pts;
     }
   }
-  if (rec?.t && key !== todayKey()) total = Math.max(total, rec.t);
-  return { total, done, pct: total ? Math.round((done / total) * 100) : 0, count: list.length, by };
+  /* Das eingefrorene Tagesziel darf ausgelassene Routinen nicht wieder
+     hereinholen — deshalb nur greifen, wenn nichts uebersprungen wurde. */
+  if (rec?.t && key !== todayKey() && skipped === 0) total = Math.max(total, rec.t);
+  return {
+    total,
+    done,
+    pct: total ? Math.round((done / total) * 100) : 0,
+    count: list.length,
+    skipped,
+    by,
+  };
 }
 
 export const totalXP = (d: AppData) =>

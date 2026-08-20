@@ -804,6 +804,45 @@ body::before {
   .netbar-dot { animation: none; }
 }
 
+/* ------------------------------------------------------------
+   Zeile mit Nebenaktion (Routine abhaken + heute auslassen)
+   ------------------------------------------------------------ */
+.row-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  transition: opacity 0.12s;
+}
+.row-main:active { opacity: 0.55; }
+
+.row-skip {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: var(--label-3);
+  transition: transform 0.32s var(--spring), color 0.2s, background 0.2s;
+}
+.row-skip:active { transform: scale(0.9); }
+.row-skip[aria-pressed="true"] {
+  color: var(--money);
+  background: color-mix(in srgb, var(--money) 16%, transparent);
+}
+.row-skip:disabled { opacity: 0.28; }
+
+.row.skipped .row-title {
+  color: var(--label-3);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+.row.skipped .checkbox { opacity: 0.35; }
+.row.skipped .row-value { opacity: 0.4; }
+
 @media (prefers-reduced-transparency: reduce) {
   .nav, .tabbar, .sheet, .toast, .netbar { backdrop-filter: none; }
   .glass, .card, .group, .empty, .btn, .field, .segmented, .chip, .tabbar, .toast, .netbar {

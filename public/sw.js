@@ -6,13 +6,13 @@
  * VERSION bei jedem Release hochzählen — davon hängt ab, ob alte Caches
  * beim Aktivieren weggeräumt werden.
  */
-const VERSION = "v3";
+const VERSION = "v4";
 const SHELL = `viersaeulen-shell-${VERSION}`;
 const ASSETS = `viersaeulen-assets-${VERSION}`;
 
 /* Die Routen der App. Schlägt eine davon beim Installieren fehl, soll nicht
    die ganze Installation scheitern — deshalb einzeln statt addAll. */
-const ROUTES = ["/", "/flow", "/system", "/goals", "/stats", "/account"];
+const ROUTES = ["/", "/flow", "/fortschritt", "/friends", "/du"];
 const EXTRAS = ["/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 /* Content-adressierte Dateien: der Hash im Namen garantiert, dass sich der
