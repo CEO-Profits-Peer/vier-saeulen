@@ -92,17 +92,50 @@ $$;
 revoke all on function public.mark_reminders_sent(uuid[]) from public, anon, authenticated;
 
 -- ============================================================
--- 4 · Der stündliche Anstoß
+-- 4 · Ziel und Secret ablegen
 --
--- Vor dem Ausführen die beiden Werte unten setzen — einmalig, als Superuser
--- im SQL Editor:
+-- Nicht über "alter database ... set": auf gehostetem Supabase ist die
+-- postgres-Rolle kein Superuser, das schlägt mit 42501 fehl. Stattdessen eine
+-- Tabelle in einem eigenen Schema. PostgREST liefert nur public aus, app_private
+-- ist über die API also gar nicht erreichbar — zusätzlich sind alle Rechte
+-- ausdrücklich entzogen.
+-- ============================================================
+
+create schema if not exists app_private;
+revoke all on schema app_private from public, anon, authenticated;
+
+create table if not exists app_private.config (
+  key        text primary key,
+  value      text not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table app_private.config enable row level security;
+revoke all on table app_private.config from public, anon, authenticated;
+
+-- Liest einen Wert. security definer, damit die Cron-Funktion herankommt,
+-- ohne dass irgendeine API-Rolle Rechte auf der Tabelle braucht.
+create or replace function app_private.cfg(k text)
+returns text
+language sql
+stable
+security definer
+set search_path = app_private
+as $$
+  select value from app_private.config where key = k;
+$$;
+
+revoke all on function app_private.cfg(text) from public, anon, authenticated;
+
+-- Die beiden Werte setzt du separat — siehe cron-setup.local.sql:
 --
---   alter database postgres set app.push_url    = 'https://routines-peer.vercel.app/api/push/send';
---   alter database postgres set app.push_secret = '<dein CRON_SECRET>';
---
--- Die Werte werden bei jedem Lauf frisch gelesen, ein zweiter Durchlauf dieser
--- Datei ist also nicht nötig. current_setting(..., true) gibt null zurück statt
--- zu scheitern, falls einer fehlt — dann bleiben die Erinnerungen einfach aus.
+--   insert into app_private.config (key, value) values
+--     ('push_url',    'https://routines-peer.vercel.app/api/push/send'),
+--     ('push_secret', '<dein CRON_SECRET>')
+--   on conflict (key) do update set value = excluded.value, updated_at = now();
+
+-- ============================================================
+-- 5 · Der stündliche Anstoß
 -- ============================================================
 create or replace function public.dispatch_reminders()
 returns void
@@ -113,11 +146,11 @@ as $$
 declare
   payload jsonb;
   ids uuid[];
-  target text := current_setting('app.push_url', true);
-  secret text := current_setting('app.push_secret', true);
+  target text := app_private.cfg('push_url');
+  secret text := app_private.cfg('push_secret');
 begin
   if target is null or secret is null then
-    raise notice 'app.push_url oder app.push_secret fehlt — Erinnerungen bleiben aus';
+    raise notice 'push_url oder push_secret fehlt in app_private.config — Erinnerungen bleiben aus';
     return;
   end if;
 
