@@ -34,6 +34,26 @@ const need = () => {
 
 export const HANDLE_RE = /^[a-z0-9_]{3,20}$/;
 
+/* Ob die Tabelle schon avatar und sigil kennt.
+ *
+ *  Die beiden Spalten kamen spaeter dazu. Statt die ganze Seite scheitern zu
+ *  lassen, wenn supabase/friends.sql noch nicht erneut lief, merken wir uns
+ *  den Befund beim ersten Fehlschlag und arbeiten ohne sie weiter — dann fehlt
+ *  eben das Zeichen, nicht die Freundesliste. */
+let hasAvatarColumns = true;
+
+const BASE_COLS = "id, handle, display_name, emoji, accent";
+const FULL_COLS = `${BASE_COLS}, avatar, sigil`;
+const cols = () => (hasAvatarColumns ? FULL_COLS : BASE_COLS);
+
+/** 42703 = Spalte gibt es nicht. PostgREST meldet zusaetzlich PGRST204,
+ *  wenn beim Schreiben eine unbekannte Spalte dabei ist. */
+const isMissingColumn = (e: unknown) => {
+  const c = (e as { code?: string; message?: string } | null)?.code;
+  const msg = (e as { message?: string } | null)?.message ?? "";
+  return c === "42703" || c === "PGRST204" || /column .* does not exist/i.test(msg);
+};
+
 /** Schlägt einen freien Handle aus Name oder E-Mail vor. */
 export function suggestHandle(seed: string): string {
   const base = seed
@@ -45,13 +65,16 @@ export function suggestHandle(seed: string): string {
 }
 
 export async function getMyProfile(userId: string): Promise<FriendProfile | null> {
-  const { data, error } = await need()
-    .from("profiles")
-    .select("id, handle, display_name, emoji, accent, avatar, sigil")
-    .eq("id", userId)
-    .maybeSingle();
+  const read = async () =>
+    need().from("profiles").select(cols()).eq("id", userId).maybeSingle();
+
+  let { data, error } = await read();
+  if (error && isMissingColumn(error)) {
+    hasAvatarColumns = false;
+    ({ data, error } = await read());
+  }
   if (error) throw error;
-  return (data as FriendProfile) ?? null;
+  return (data as unknown as FriendProfile) ?? null;
 }
 
 /** Legt das öffentliche Profil an oder aktualisiert es. Der Handle ist
@@ -60,8 +83,23 @@ export async function saveMyProfile(
   userId: string,
   patch: { handle?: string; display_name?: string; emoji?: string; accent?: Pillar; avatar?: AvatarKind; sigil?: Sigil | null },
 ): Promise<void> {
-  const row = { id: userId, ...patch, updated_at: new Date().toISOString() };
-  const { error } = await need().from("profiles").upsert(row, { onConflict: "id" });
+  const write = async () => {
+    /* Ohne die Spalten duerfen sie auch nicht im Datensatz stehen, sonst
+       lehnt PostgREST das Schreiben komplett ab. */
+    const { avatar, sigil, ...rest } = patch;
+    const row = hasAvatarColumns
+      ? { id: userId, ...patch, updated_at: new Date().toISOString() }
+      : { id: userId, ...rest, updated_at: new Date().toISOString() };
+    void avatar;
+    void sigil;
+    return need().from("profiles").upsert(row, { onConflict: "id" });
+  };
+
+  let { error } = await write();
+  if (error && isMissingColumn(error)) {
+    hasAvatarColumns = false;
+    ({ error } = await write());
+  }
   if (error) {
     if (error.code === "23505") throw new Error("Der Handle ist schon vergeben.");
     if (error.code === "23514") throw new Error("Handle: 3–20 Zeichen, nur a–z, 0–9 und _.");
@@ -74,7 +112,12 @@ export async function saveMyProfile(
 
 export async function findByHandle(handle: string): Promise<FriendProfile | null> {
   const { data, error } = await need().rpc("find_by_handle", { wanted: handle });
-  if (error) throw error;
+  if (error) {
+    if (isMissingColumn(error)) {
+      throw new Error("Die Suchfunktion ist veraltet — supabase/friends.sql erneut ausführen.");
+    }
+    throw error;
+  }
   const rows = (data ?? []) as FriendProfile[];
   return rows[0] ?? null;
 }
@@ -131,13 +174,19 @@ export async function loadFriends(
 
   if (!ids.length) return { friends: [], pending: [] };
 
-  const { data: profiles, error: profErr } = await db
-    .from("profiles")
-    .select("id, handle, display_name, emoji, accent, avatar, sigil")
-    .in("id", ids);
+  const readProfiles = async () => db.from("profiles").select(cols()).in("id", ids);
+  let { data: profiles, error: profErr } = await readProfiles();
+  if (profErr && isMissingColumn(profErr)) {
+    hasAvatarColumns = false;
+    ({ data: profiles, error: profErr } = await readProfiles());
+  }
   if (profErr) throw profErr;
 
-  const byId = new Map((profiles ?? []).map((p) => [p.id, p as FriendProfile]));
+  /* Der Select-String steht erst zur Laufzeit fest, deshalb kann der
+     Supabase-Client den Zeilentyp nicht ableiten — hier ausdruecklich ueber
+     unknown, statt einen falschen Typ zu behaupten. */
+  const profileRows = (profiles ?? []) as unknown as FriendProfile[];
+  const byId = new Map(profileRows.map((p) => [p.id, p]));
 
   const acceptedIds = rows.filter((f) => f.status === "accepted").map(otherOf);
   let scores = new Map<string, { score: number; streak: number }>();

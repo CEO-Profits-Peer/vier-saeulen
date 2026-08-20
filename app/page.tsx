@@ -1,5 +1,6 @@
 "use client";
 
+import { Avatar } from "@/components/Avatar";
 import { WeekPlan } from "@/components/WeekPlan";
 import { useT } from "@/lib/i18n";
 import { shareDayCard } from "@/lib/share";
@@ -86,8 +87,14 @@ function Today() {
             >
               {`↗ ${t.today.share}`}
             </button>
-            <Link href="/du" className="badge" aria-label={t.tabs.you}>
-              {t.today.settings}
+            {/* Das eigene Profilbild statt eines Zahnrads: es ist grösser
+                anzutippen, sagt dasselbe, und man sieht sein Zeichen jeden Tag. */}
+            <Link
+              href="/du"
+              aria-label={t.tabs.you}
+              style={{ display: "grid", placeItems: "center", borderRadius: "50%", flex: "none" }}
+            >
+              <Avatar profile={data.profile} fallback={t.app.name} size={34} />
             </Link>
           </>
         }

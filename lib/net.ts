@@ -33,9 +33,27 @@ export const useNet = create<NetState>((set) => ({
   setPending: (pending) => set({ pending }),
 }));
 
+/** Zieht den Text aus allem, was als Fehler ankommt.
+ *
+ *  Supabase wirft einfache Objekte, keine Error-Instanzen — ein blosses
+ *  String(err) ergibt darauf "[object Object]" und verschluckt damit jede
+ *  Meldung. Deshalb hier ausdruecklich nach message und code greifen. */
+function rawMessage(err: unknown): string {
+  if (!err) return "";
+  if (typeof err === "string") return err;
+  if (err instanceof Error) return err.message;
+  if (typeof err === "object") {
+    const o = err as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
+    const parts = [o.message, o.details, o.hint].filter((v): v is string => typeof v === "string" && v.length > 0);
+    if (parts.length) return o.code ? parts[0] + " (" + String(o.code) + ")" : parts[0];
+    if (o.code) return "Fehler " + String(o.code);
+  }
+  return String(err);
+}
+
 /** Fehler aus Supabase und dem Netz-Stack lesbar machen. */
 export function netMessage(err: unknown): string {
-  const raw = err instanceof Error ? err.message : String(err ?? "");
+  const raw = rawMessage(err);
   const m = raw.toLowerCase();
   if (m.includes("failed to fetch") || m.includes("networkerror")) return "Keine Verbindung.";
   if (m.includes("relation") && m.includes("does not exist")) {
@@ -44,6 +62,9 @@ export function netMessage(err: unknown): string {
   if (m.includes("jwt") || m.includes("token")) return "Sitzung abgelaufen — bitte neu anmelden.";
   if (m.includes("row-level security") || m.includes("permission denied")) {
     return "Die Datenbank verweigert den Zugriff — prüfe die RLS-Policies.";
+  }
+  if (m.includes("does not exist") && m.includes("profiles.")) {
+    return "Der Datenbank fehlen Spalten — supabase/friends.sql erneut ausführen.";
   }
   return raw || "Unbekannter Fehler";
 }
