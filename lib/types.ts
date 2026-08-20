@@ -103,17 +103,46 @@ export interface RunState {
   minutes: Partial<Record<SegKind, number>>;
 }
 
+/** Ein Balken des eigenen Zeichens: Hoehe in Prozent des Durchmessers,
+ *  Farbe frei waehlbar. Vier davon, zwei links und zwei rechts der Mitte. */
+export interface SigilBar {
+  h: number;
+  c: string;
+}
+
+export interface Sigil {
+  bars: [SigilBar, SigilBar, SigilBar, SigilBar];
+}
+
+export type AvatarKind = "letter" | "emoji" | "sigil";
+
 export interface Profile {
   /** Anzeigename — rein kosmetisch, nichts haengt daran */
   name?: string;
   /** Emoji als Avatar; faellt auf den Anfangsbuchstaben zurueck */
   emoji?: string;
-  /** Lieblingssaeule, faerbt Avatar und Akzente */
+  /** Welche Darstellung gewaehlt ist. Fehlt sie, entscheidet emoji —
+   *  so bleiben Profile aus frueheren Fassungen unveraendert. */
+  avatar?: AvatarKind;
+  /** Das eigene Zeichen: vier Saeulen im Kreis */
+  sigil?: Sigil;
+  /** Lieblingssaeule, faerbt Akzente */
   accent?: Pillar;
   /** Tag der ersten Nutzung, fuer "dabei seit" */
   since?: string;
   updatedAt: number;
 }
+
+/** Ausgangszustand des eigenen Zeichens — die vier Saeulenfarben, leicht
+ *  unterschiedlich hoch, damit es von Anfang an nach etwas aussieht. */
+export const DEFAULT_SIGIL: Sigil = {
+  bars: [
+    { h: 58, c: "#007aff" },
+    { h: 82, c: "#30b0c7" },
+    { h: 70, c: "#ff2d55" },
+    { h: 46, c: "#ff9500" },
+  ],
+};
 
 export interface AppData {
   v: 2;

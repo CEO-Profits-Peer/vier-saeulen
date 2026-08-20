@@ -8,6 +8,7 @@ import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { mergeData, pullRemote, pushRemote } from "@/lib/sync";
 import { FlowLayer } from "./FlowLayer";
+import { InstallPopup } from "./InstallPopup";
 import { ToastHost } from "./Toast";
 import { UpdatePrompt } from "./UpdatePrompt";
 
@@ -153,6 +154,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <FlowLayer />
       <ToastHost />
       <UpdatePrompt />
+      <InstallPopup />
     </>
   );
 }

@@ -7,7 +7,7 @@ export function seedHabits(): Habit[] {
     id: uid(), name, pillar, block, pts, days, updatedAt: now,
   });
   return [
-    h("Ohne Snooze aufstehen", "body", "morning", 10, ALLDAYS),
+    h("Pünktlich aufstehen", "body", "morning", 10, ALLDAYS),
     h("Wasser + Frühstück", "body", "morning", 5, ALLDAYS),
     h("5 Min Tagesplan schreiben", "learn", "morning", 5, ALLDAYS),
     h("Im Unterricht mitschreiben", "learn", "school", 10, WEEKDAYS),

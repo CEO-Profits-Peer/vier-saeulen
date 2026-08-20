@@ -843,6 +843,50 @@ body::before {
 .row.skipped .checkbox { opacity: 0.35; }
 .row.skipped .row-value { opacity: 0.4; }
 
+/* ------------------------------------------------------------
+   Installations-Hinweis — schwebt über der Tab-Kapsel
+   ------------------------------------------------------------ */
+.installpop {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(var(--tabbar) + 22px + env(safe-area-inset-bottom));
+  max-width: 616px;
+  margin: 0 auto;
+  z-index: 47;
+  border-radius: 18px;
+  padding: 14px 15px 12px;
+  display: grid;
+  gap: 10px;
+  background: var(--glass-fill-strong);
+  backdrop-filter: saturate(var(--glass-sat)) blur(22px);
+  box-shadow:
+    inset 0 0.5px 0 0 var(--glass-sheen),
+    inset 0 0 0 0.5px var(--glass-rim),
+    var(--glass-shadow-lift);
+}
+.installpop.with-run { bottom: calc(var(--tabbar) + 92px + env(safe-area-inset-bottom)); }
+
+.installpop-body { display: flex; align-items: flex-start; gap: 12px; }
+.installpop-icon {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--tint) 16%, transparent);
+  color: var(--tint);
+}
+.installpop-title { font-size: 15px; font-weight: 600; }
+.installpop-sub { font-size: 13px; color: var(--label-2); line-height: 1.4; margin-top: 2px; }
+.installpop-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.installpop-actions .btn { min-height: 38px; padding: 8px 16px; }
+
+@media (prefers-reduced-transparency: reduce) {
+  .installpop { backdrop-filter: none; background: var(--card); }
+}
+
 @media (prefers-reduced-transparency: reduce) {
   .nav, .tabbar, .sheet, .toast, .netbar { backdrop-filter: none; }
   .glass, .card, .group, .empty, .btn, .field, .segmented, .chip, .tabbar, .toast, .netbar {

@@ -61,6 +61,23 @@ interface Store {
 
 const touch = (d: AppData): AppData => ({ ...d, updatedAt: Date.now() });
 
+/** Einmalige Nachbesserungen an gespeicherten Daten.
+ *
+ *  Laeuft beim Laden aus localStorage. Aendert nur, was eindeutig zuzuordnen
+ *  ist — wer den Eintrag selbst umbenannt hat, behaelt seinen Namen. */
+function migrate(state: { data: AppData; setData: (d: AppData) => void }) {
+  const old = "Ohne Snooze aufstehen";
+  const hit = state.data.habits.some((h) => h.name === old);
+  if (!hit) return;
+  state.setData({
+    ...state.data,
+    habits: state.data.habits.map((h) =>
+      h.name === old ? { ...h, name: "Pünktlich aufstehen", updatedAt: Date.now() } : h,
+    ),
+    updatedAt: Date.now(),
+  });
+}
+
 export const useStore = create<Store>()(
   persist(
     (set, get) => ({
@@ -418,7 +435,11 @@ export const useStore = create<Store>()(
       storage: createJSONStorage(() => localStorage),
       version: 2,
       partialize: (s) => ({ data: s.data, run: s.run, runMinimized: s.runMinimized, lastSyncedAt: s.lastSyncedAt }),
-      onRehydrateStorage: () => (state) => state?.setHydrated(),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        migrate(state);
+        state.setHydrated();
+      },
     },
   ),
 );

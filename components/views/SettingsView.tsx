@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { Nav } from "@/components/Nav";
+import { Avatar } from "@/components/Avatar";
+import { AvatarEditor } from "@/components/AvatarEditor";
 import { InstallButton } from "@/components/InstallButton";
 import { Reminders } from "@/components/Reminders";
 import { toast } from "@/components/Toast";
@@ -16,6 +18,7 @@ import {
   updateEmail,
   updatePassword,
 } from "@/lib/auth";
+import { useInstall } from "@/lib/install";
 import { useNet, netMessage } from "@/lib/net";
 import { cloudEnabled } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
@@ -23,8 +26,6 @@ import { deleteRemote } from "@/lib/sync";
 import { dayStats } from "@/lib/score";
 import { DAY_ABBR, PILLARS, PKEYS, type AppData, type Pillar } from "@/lib/types";
 import { fromKey, todayKey } from "@/lib/date";
-
-const AVATARS = ["🎯", "🔥", "⚡", "🌱", "🧠", "💪", "📈", "🦊", "🐺", "🌙", "☕", "🎧"];
 
 function csvFrom(data: AppData) {
   const head = [
@@ -69,28 +70,21 @@ function ProfileCard() {
   const data = useStore((s) => s.data);
   const user = useAuth((s) => s.user);
 
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   const dayCount = Object.keys(data.days).length;
-  const accent = profile?.accent ?? "learn";
-  const fallback = (profile?.name ?? user?.email ?? "?").trim().slice(0, 1).toUpperCase();
+  const fallback = user?.email ?? "";
 
   return (
-    <div className={`card ${PILLARS[accent].cls}`}>
+    <div className="card">
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <button
-          onClick={() => { setPickerOpen((v) => !v); haptic("tap"); }}
-          aria-label="Avatar ändern"
-          aria-expanded={pickerOpen}
-          style={{
-            width: 56, height: 56, borderRadius: "50%", flex: "none",
-            background: "var(--p)", color: "#fff",
-            display: "grid", placeItems: "center",
-            fontSize: profile?.emoji ? 27 : 22, fontWeight: 700,
-            boxShadow: "inset 0 1px 0 0 rgba(255,255,255,.4), 0 4px 14px -6px var(--p)",
-          }}
+          onClick={() => { setEditing((v) => !v); haptic("tap"); }}
+          aria-label="Profilbild ändern"
+          aria-expanded={editing}
+          style={{ borderRadius: "50%", flex: "none" }}
         >
-          {profile?.emoji || fallback}
+          <Avatar profile={profile} fallback={fallback} size={56} />
         </button>
 
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -110,49 +104,42 @@ function ProfileCard() {
         </div>
       </div>
 
-      {pickerOpen ? (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14 }}>
-          {AVATARS.map((emoji) => (
-            <button
-              key={emoji}
-              className="chip"
-              aria-pressed={profile?.emoji === emoji}
-              style={{ fontSize: 20, minHeight: 42, padding: "6px 12px" }}
-              onClick={() => { setProfile({ emoji }); haptic("tap"); }}
-            >
-              {emoji}
-            </button>
-          ))}
-          <button
-            className="chip"
-            onClick={() => { setProfile({ emoji: "" }); haptic("tap"); }}
-            aria-pressed={!profile?.emoji}
-          >
-            Buchstabe
-          </button>
+      {editing ? (
+        <div style={{ marginTop: 16, paddingTop: 16, borderTop: "0.5px solid var(--separator)" }}>
+          <AvatarEditor fallback={fallback} />
         </div>
-      ) : null}
-
-      <p className="field-label" style={{ margin: "16px 4px 8px" }}>Akzentfarbe</p>
-      <div style={{ display: "flex", gap: 8 }}>
-        {PKEYS.map((p) => (
-          <button
-            key={p}
-            onClick={() => { setProfile({ accent: p }); haptic("tap"); }}
-            aria-label={PILLARS[p].label}
-            aria-pressed={accent === p}
-            className={PILLARS[p].cls}
-            style={{
-              flex: 1, height: 36, borderRadius: 10,
-              background: "var(--p)",
-              boxShadow: accent === p
-                ? "inset 0 0 0 2px var(--bg), inset 0 0 0 4px var(--p)"
-                : "inset 0 1px 0 0 rgba(255,255,255,.3)",
-            }}
-          />
-        ))}
-      </div>
+      ) : (
+        <button
+          className="btn plain wide"
+          style={{ marginTop: 8, justifyContent: "flex-start" }}
+          onClick={() => { setEditing(true); haptic("tap"); }}
+        >
+          Profilbild ändern
+        </button>
+      )}
     </div>
+  );
+}
+
+/* ============================================================
+   Installation — steht bewusst weit oben, aber nur im Browser.
+   Als App läuft sie ohnehin schon; dann ist der Abschnitt nur Ballast.
+   ============================================================ */
+function InstallCard() {
+  const standalone = useInstall((s) => s.standalone);
+  const justInstalled = useInstall((s) => s.justInstalled);
+  if (standalone || justInstalled) return null;
+
+  return (
+    <>
+      <p className="section-title">App</p>
+      <div className="card">
+        <p style={{ margin: "0 0 12px", fontSize: 15 }}>
+          Auf dem Homescreen läuft sie ohne Browserleiste, mit eigenem Icon — und startet auch ohne Netz.
+        </p>
+        <InstallButton />
+      </div>
+    </>
   );
 }
 
@@ -270,6 +257,8 @@ export function SettingsView({ below }: { below?: ReactNode }) {
 
       <p className="section-title">Profil</p>
       <ProfileCard />
+
+      <InstallCard />
 
       <p className="section-title">Sync</p>
       {!cloudEnabled ? (
@@ -485,17 +474,6 @@ export function SettingsView({ below }: { below?: ReactNode }) {
         <button className="btn wide danger" onClick={runImport} disabled={!importText.trim()}>
           Ersetzen und einspielen
         </button>
-      </div>
-
-      {/* App */}
-      <p className="section-title">App</p>
-      <div className="card">
-        <p style={{ margin: 0, fontSize: 15 }}>
-          Auf dem Homescreen läuft sie ohne Browserleiste, mit eigenem Icon — und startet auch ohne Netz.
-        </p>
-        <div style={{ marginTop: 12 }}>
-          <InstallButton />
-        </div>
       </div>
 
       <div className="card">

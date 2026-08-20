@@ -1,7 +1,7 @@
 "use client";
 
 import { supabase } from "./supabase";
-import type { Pillar } from "./types";
+import type { AvatarKind, Pillar, Sigil } from "./types";
 
 export interface FriendProfile {
   id: string;
@@ -9,6 +9,9 @@ export interface FriendProfile {
   display_name: string;
   emoji: string;
   accent: Pillar;
+  /** Aeltere Zeilen kennen die beiden Felder nicht — deshalb optional. */
+  avatar?: AvatarKind;
+  sigil?: Sigil | null;
 }
 
 export interface FriendRow extends FriendProfile {
@@ -44,7 +47,7 @@ export function suggestHandle(seed: string): string {
 export async function getMyProfile(userId: string): Promise<FriendProfile | null> {
   const { data, error } = await need()
     .from("profiles")
-    .select("id, handle, display_name, emoji, accent")
+    .select("id, handle, display_name, emoji, accent, avatar, sigil")
     .eq("id", userId)
     .maybeSingle();
   if (error) throw error;
@@ -55,13 +58,16 @@ export async function getMyProfile(userId: string): Promise<FriendProfile | null
  *  eindeutig — die Datenbank lehnt Doppelungen ab, das fangen wir lesbar auf. */
 export async function saveMyProfile(
   userId: string,
-  patch: { handle?: string; display_name?: string; emoji?: string; accent?: Pillar },
+  patch: { handle?: string; display_name?: string; emoji?: string; accent?: Pillar; avatar?: AvatarKind; sigil?: Sigil | null },
 ): Promise<void> {
   const row = { id: userId, ...patch, updated_at: new Date().toISOString() };
   const { error } = await need().from("profiles").upsert(row, { onConflict: "id" });
   if (error) {
     if (error.code === "23505") throw new Error("Der Handle ist schon vergeben.");
     if (error.code === "23514") throw new Error("Handle: 3–20 Zeichen, nur a–z, 0–9 und _.");
+    if (error.code === "42703") {
+      throw new Error("Der Datenbank fehlen die Spalten avatar und sigil — supabase/friends.sql erneut ausführen.");
+    }
     throw error;
   }
 }
@@ -127,7 +133,7 @@ export async function loadFriends(
 
   const { data: profiles, error: profErr } = await db
     .from("profiles")
-    .select("id, handle, display_name, emoji, accent")
+    .select("id, handle, display_name, emoji, accent, avatar, sigil")
     .in("id", ids);
   if (profErr) throw profErr;
 

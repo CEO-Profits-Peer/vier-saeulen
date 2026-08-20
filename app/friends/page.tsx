@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Nav } from "@/components/Nav";
 import { Hydrated } from "@/components/Hydrated";
+import { Avatar as PeerAvatar } from "@/components/Avatar";
 import { Ring } from "@/components/Ring";
 import { toast } from "@/components/Toast";
 import { haptic } from "@/lib/haptics";
@@ -40,26 +41,21 @@ export default function FriendsPage() {
 }
 
 function Avatar({ p, size = 40 }: { p: FriendProfile; size?: number }) {
-  const letter = (p.display_name || p.handle || "?").slice(0, 1).toUpperCase();
+  /* Das Freundesprofil traegt dieselben Felder wie das eigene — nur flacher.
+     Hier wird es auf die Form gebracht, die die gemeinsame Darstellung kennt. */
   return (
-    <span
-      className={PILLARS[p.accent]?.cls ?? "p-learn"}
-      style={{
-        width: size,
-        height: size,
-        borderRadius: "50%",
-        flex: "none",
-        background: "var(--p)",
-        color: "#fff",
-        display: "grid",
-        placeItems: "center",
-        fontSize: p.emoji ? size * 0.5 : size * 0.42,
-        fontWeight: 700,
-        boxShadow: "inset 0 1px 0 0 rgba(255,255,255,.35)",
+    <PeerAvatar
+      size={size}
+      fallback={p.handle}
+      profile={{
+        name: p.display_name || p.handle,
+        emoji: p.emoji,
+        accent: p.accent,
+        avatar: p.avatar ?? (p.emoji ? "emoji" : "letter"),
+        sigil: p.sigil ?? undefined,
+        updatedAt: 0,
       }}
-    >
-      {p.emoji || letter}
-    </span>
+    />
   );
 }
 
@@ -115,6 +111,37 @@ function Friends() {
     }, 2000);
     return () => clearTimeout(t);
   }, [user, me, key, myScore, myStreak]);
+
+  /* Profiländerungen nachziehen: wer seinen Avatar wechselt, soll bei Freunden
+     nicht wochenlang mit dem alten stehen. Gebündelt, damit nicht jeder
+     Reglerzug eine Anfrage auslöst. */
+  useEffect(() => {
+    if (!user || !me) return;
+    const p = data.profile;
+    const next = {
+      display_name: p?.name ?? "",
+      emoji: p?.emoji ?? "",
+      accent: (p?.accent ?? "learn") as Pillar,
+      avatar: p?.avatar ?? (p?.emoji ? "emoji" : "letter"),
+      sigil: p?.sigil ?? null,
+    };
+    const same =
+      me.display_name === next.display_name &&
+      me.emoji === next.emoji &&
+      me.accent === next.accent &&
+      (me.avatar ?? "letter") === next.avatar &&
+      JSON.stringify(me.sigil ?? null) === JSON.stringify(next.sigil);
+    if (same) return;
+
+    const t = setTimeout(() => {
+      void saveMyProfile(user.id, next)
+        .then(() => setMe((cur) => (cur ? { ...cur, ...next } : cur)))
+        .catch(() => {
+          /* Offline oder Spalten fehlen — der nächste Versuch holt es nach. */
+        });
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [user, me, data.profile]);
 
   const guard = async (fn: () => Promise<void>, ok?: string) => {
     if (!online) return toast("Dafür braucht es eine Verbindung");
@@ -185,6 +212,8 @@ function Friends() {
                   display_name: data.profile?.name ?? "",
                   emoji: data.profile?.emoji ?? "",
                   accent: (data.profile?.accent ?? "learn") as Pillar,
+                  avatar: data.profile?.avatar ?? (data.profile?.emoji ? "emoji" : "letter"),
+                  sigil: data.profile?.sigil ?? null,
                 });
                 await refresh();
               }, "Profil angelegt")

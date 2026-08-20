@@ -22,6 +22,15 @@ create table if not exists public.profiles (
   updated_at    timestamptz not null default now()
 );
 
+-- Nachgezogen: das eigene Zeichen und welche Darstellung gewaehlt ist.
+-- add column if not exists laesst sich gefahrlos erneut ausfuehren.
+alter table public.profiles
+  add column if not exists avatar text not null default 'letter'
+  check (avatar in ('letter', 'emoji', 'sigil'));
+
+alter table public.profiles
+  add column if not exists sigil jsonb;
+
 create table if not exists public.friendships (
   id         uuid primary key default gen_random_uuid(),
   requester  uuid not null references auth.users (id) on delete cascade,
@@ -94,13 +103,13 @@ $$;
 -- Jemanden finden: nur über den exakten Handle, nie über eine Teilzeichenkette.
 -- Damit lässt sich die Nutzerliste nicht abgrasen.
 create or replace function public.find_by_handle(wanted text)
-returns table (id uuid, handle text, display_name text, emoji text, accent text)
+returns table (id uuid, handle text, display_name text, emoji text, accent text, avatar text, sigil jsonb)
 language sql
 security definer
 stable
 set search_path = public
 as $$
-  select p.id, p.handle, p.display_name, p.emoji, p.accent
+  select p.id, p.handle, p.display_name, p.emoji, p.accent, p.avatar, p.sigil
   from public.profiles p
   where p.handle = lower(trim(wanted))
     and p.id <> auth.uid()
