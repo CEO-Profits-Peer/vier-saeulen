@@ -1,7 +1,7 @@
 {
-  "name": "Vier Säulen",
-  "short_name": "4 Säulen",
-  "description": "Learn, Body, Image, Money — dein Tag in vier Säulen.",
+  "name": "PEER Routines",
+  "short_name": "Routines",
+  "description": "Learn, Body, Image, Money — your day in four pillars.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

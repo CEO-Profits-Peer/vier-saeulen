@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n";
 import { insights, insightsNeeded } from "@/lib/insights";
 import { useStore } from "@/lib/store";
 
 export function Insights() {
+  const t = useT();
   const data = useStore((s) => s.data);
   const found = useMemo(() => insights(data), [data]);
   const needed = useMemo(() => insightsNeeded(data), [data]);
@@ -13,8 +15,8 @@ export function Insights() {
     return (
       <div className="empty">
         {needed > 0
-          ? `Noch ${needed} ${needed === 1 ? "Check-in" : "Check-ins"}, dann tauchen hier Muster auf.`
-          : "Noch keine deutlichen Muster — bisher liegen deine Tage zu eng beieinander."}
+          ? t.insights.needMore(needed)
+          : t.insights.none}
       </div>
     );
   }
@@ -26,13 +28,13 @@ export function Insights() {
           <span className={`dot ${i.tone === "good" ? "dot-good" : "dot-bad"}`} />
           <span className="row-title">
             {i.text}
-            <span className="row-sub">aus {i.sample} Tagen</span>
+            <span className="row-sub">{t.insights.fromDays(i.sample)}</span>
           </span>
         </div>
       ))}
       <div className="row">
         <span className="row-title" style={{ fontSize: 13, color: "var(--label-2)" }}>
-          Das sind Zusammenhänge, keine Ursachen — beobachtet auf deinen eigenen Tagen.
+          {t.insights.disclaimer}
         </span>
       </div>
     </div>

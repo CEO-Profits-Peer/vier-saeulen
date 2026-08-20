@@ -54,8 +54,8 @@ export function InstallPopup() {
       setGone(true);
       return;
     }
-    const t = setTimeout(() => setRipe(true), DELAY_MS);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setRipe(true), DELAY_MS);
+    return () => clearTimeout(timer);
   }, []);
 
   const ios = isIOS();

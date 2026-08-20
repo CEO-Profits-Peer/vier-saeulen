@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useT } from "@/lib/i18n";
 import { Ring } from "./Ring";
 import { Sheet } from "./Sheet";
 import { haptic } from "@/lib/haptics";
@@ -15,6 +16,7 @@ import { PILLARS, PKEYS, STREAK_MIN } from "@/lib/types";
 /** Rückblick: ein Datum wählen und den Tag ansehen. Die Daten liegen längst
  *  im Store — es fehlte nur der Weg dorthin. */
 export function DayLookup() {
+  const t = useT();
   const data = useStore((s) => s.data);
   const toggleJoker = useStore((s) => s.toggleJoker);
   const [key, setKey] = useState("");
@@ -36,7 +38,7 @@ export function DayLookup() {
   return (
     <>
       <div className="card">
-        <p className="field-label">Tag ansehen</p>
+        <p className="field-label">{t.lookback.pick}</p>
         <input
           className="field"
           type="date"
@@ -86,13 +88,13 @@ export function DayLookup() {
 
             {rec?.checkin?.win ? (
               <div className="card" style={{ marginTop: 14 }}>
-                <p className="field-label" style={{ margin: "0 0 4px" }}>Win des Tages</p>
+                <p className="field-label" style={{ margin: "0 0 4px" }}>{t.lookback.win}</p>
                 <p style={{ margin: 0 }}>{rec.checkin.win}</p>
               </div>
             ) : null}
             {rec?.checkin?.note ? (
               <div className="card">
-                <p className="field-label" style={{ margin: "0 0 4px" }}>Notiz</p>
+                <p className="field-label" style={{ margin: "0 0 4px" }}>{t.lookback.note}</p>
                 <p style={{ margin: 0 }}>{rec.checkin.note}</p>
               </div>
             ) : null}
@@ -106,14 +108,14 @@ export function DayLookup() {
                 onClick={() => {
                   toggleJoker(key);
                   haptic(isJoker ? "tap" : "success");
-                  toast(isJoker ? "Joker zurückgenommen" : "Tag geschützt — die Serie läuft weiter");
+                  toast(isJoker ? t.lookback.jokerUndone : t.lookback.jokerSet);
                 }}
               >
                 {isJoker
-                  ? "Joker zurücknehmen"
+                  ? t.lookback.undoJoker
                   : left < 1
-                    ? "Joker für diesen Monat aufgebraucht"
-                    : `Joker einsetzen (${left} übrig)`}
+                    ? t.lookback.jokerUsedUp
+                    : t.lookback.useJoker(left)}
               </button>
             ) : null}
 
@@ -122,11 +124,11 @@ export function DayLookup() {
               style={{ marginTop: 8 }}
               onClick={async () => {
                 const res = await shareDayCard(data, key);
-                if (res === "downloaded") toast("Als Bild gespeichert");
-                else if (res === "failed") toast("Teilen hat nicht geklappt");
+                if (res === "downloaded") toast(t.today.savedAsImage);
+                else if (res === "failed") toast(t.today.shareFailed);
               }}
             >
-              Als Bild teilen
+              {t.lookback.shareImage}
             </button>
           </>
         ) : null}

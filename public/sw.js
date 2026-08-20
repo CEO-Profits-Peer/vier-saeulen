@@ -1,4 +1,4 @@
-/* Vier Säulen — Service Worker.
+/* PEER Routines — Service Worker.
  *
  * Die App ist local-first: alle Daten liegen ohnehin in localStorage. Der
  * Service Worker sorgt nur dafür, dass die Hülle auch ohne Netz startet.
@@ -139,7 +139,7 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("push", (event) => {
   /* Ohne lesbare Nutzlast lieber eine schlichte Erinnerung als gar keine:
      manche Push-Dienste stellen leere Wecknachrichten zu. */
-  let data = { title: "Vier Säulen", body: "Tag abschließen — Check-in offen.", url: "/?checkin=1", tag: "daily-checkin" };
+  let data = { title: "PEER Routines", body: "Check-in offen · Check-in open", url: "/?checkin=1", tag: "daily-checkin" };
   try {
     if (event.data) data = { ...data, ...event.data.json() };
   } catch {

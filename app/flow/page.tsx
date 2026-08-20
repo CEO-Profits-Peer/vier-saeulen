@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { useT } from "@/lib/i18n";
 import { Suspense, useEffect, useState } from "react";
 import { Nav } from "@/components/Nav";
 import { Hydrated } from "@/components/Hydrated";
@@ -25,6 +26,7 @@ export default function FlowPage() {
 }
 
 function Flow() {
+  const t = useT();
   const params = useSearchParams();
   const data = useStore((s) => s.data);
   const run = useStore((s) => s.run);
@@ -45,9 +47,9 @@ function Flow() {
     if (parsed) {
       addRoutine(parsed);
       haptic("success");
-      toast(`„${parsed.name}" übernommen`);
+      toast(t.flow.imported(parsed.name));
     } else {
-      toast("Dieser Sequenz-Link ist unvollständig");
+      toast(t.flow.importBroken);
     }
     window.history.replaceState({}, "", "/flow");
   }, [params, addRoutine]);
@@ -75,7 +77,7 @@ function Flow() {
     <>
       <Nav
         title="Flow"
-        subtitle="Eine Sequenz, ein Knopf. Der Timer sagt dir, was gerade dran ist."
+        subtitle={t.flow.subtitle}
         right={
           <button className="badge tint" onClick={() => { setEditing(null); setSheetOpen(true); haptic("tap"); }}>
             <Plus size={14} /> Neu
@@ -145,17 +147,17 @@ function Flow() {
                       return;
                     }
                     await navigator.clipboard.writeText(url);
-                    toast("Link kopiert");
+                    toast(t.flow.linkCopied);
                   } catch (err) {
                     if (err instanceof DOMException && err.name === "AbortError") return;
-                    toast("Teilen hat nicht geklappt");
+                    toast(t.today.shareFailed);
                   }
                 }}
               >
-                Teilen
+                {t.flow.share}
               </button>
               <button className="btn plain" onClick={() => { setEditing(r); setSheetOpen(true); haptic("tap"); }}>
-                Bearbeiten
+                {t.flow.edit}
               </button>
             </div>
           </div>
@@ -164,7 +166,7 @@ function Flow() {
 
       {sessions.length ? (
         <>
-          <p className="section-title">Zuletzt gelaufen</p>
+          <p className="section-title">{t.flow.recent}</p>
           <div className="group">
             {sessions.map((s) => {
               const mins = Object.values(s.minutes).reduce((a, m) => a + (m ?? 0), 0);

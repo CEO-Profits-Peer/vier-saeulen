@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useT } from "@/lib/i18n";
 import { haptic } from "@/lib/haptics";
 import { TabFlow, TabFriends, TabProgress, TabToday, TabYou } from "./Icons";
 
@@ -11,12 +12,12 @@ import { TabFlow, TabFriends, TabProgress, TabToday, TabYou } from "./Icons";
    ihn kaum noch, als eigener Tab hat er einen Platz belegt, den Freunde
    dringender brauchen. */
 const TABS = [
-  { href: "/", label: "Heute", Icon: TabToday },
-  { href: "/flow", label: "Flow", Icon: TabFlow },
-  { href: "/fortschritt", label: "Fortschritt", Icon: TabProgress },
-  { href: "/friends", label: "Freunde", Icon: TabFriends },
-  { href: "/du", label: "Du", Icon: TabYou },
-];
+  { href: "/", key: "today", Icon: TabToday },
+  { href: "/flow", key: "flow", Icon: TabFlow },
+  { href: "/fortschritt", key: "progress", Icon: TabProgress },
+  { href: "/friends", key: "friends", Icon: TabFriends },
+  { href: "/du", key: "you", Icon: TabYou },
+] as const;
 
 /* Die alten Adressen leiten weiter, markieren aber schon beim Antippen den
    richtigen Tab — sonst blinkt die Auswahl kurz auf den falschen. */
@@ -33,11 +34,12 @@ const isActive = (href: string, pathname: string) => {
 };
 
 export function TabBar() {
+  const t = useT();
   const pathname = usePathname();
-  const index = TABS.findIndex((t) => isActive(t.href, pathname));
+  const index = TABS.findIndex((tab) => isActive(tab.href, pathname));
 
   return (
-    <nav className="tabbar" aria-label="Bereiche">
+    <nav className="tabbar" aria-label={t.app.name}>
       <div className="tabbar-inner">
         {/* Eine Pille für alle Tabs: sie ist genau einen Tab breit und wandert
             per Transform um ihre eigene Breite. Die Federung macht die
@@ -56,7 +58,7 @@ export function TabBar() {
           </span>
         ) : null}
 
-        {TABS.map(({ href, label, Icon }) => {
+        {TABS.map(({ href, key, Icon }) => {
           const active = isActive(href, pathname);
           return (
             <Link
@@ -68,7 +70,7 @@ export function TabBar() {
               aria-current={active ? "page" : undefined}
             >
               <Icon active={active} />
-              <span>{label}</span>
+              <span>{t.tabs[key]}</span>
             </Link>
           );
         })}

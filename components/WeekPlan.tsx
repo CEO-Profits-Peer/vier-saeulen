@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/lib/i18n";
 import { haptic } from "@/lib/haptics";
 import { isoWeek } from "@/lib/date";
 import { useStore } from "@/lib/store";
@@ -13,6 +14,7 @@ import { MAX_WEEK_PLANS } from "@/lib/types";
  *  Routinen und „Heute extra“.
  */
 export function WeekPlan({ compact = false }: { compact?: boolean }) {
+  const t = useT();
   const weeks = useStore((s) => s.data.weeks);
   const setWeek = useStore((s) => s.setWeek);
   const wk = isoWeek(new Date());
@@ -34,8 +36,8 @@ export function WeekPlan({ compact = false }: { compact?: boolean }) {
         style={{ borderRadius: "var(--radius)", background: "var(--card)", marginBottom: 16 }}
       >
         <span className="row-title" style={{ color: "var(--tint)" }}>
-          Schwerpunkte für diese Woche setzen
-          <span className="row-sub">Drei Richtungen, die diese Woche zählen</span>
+          {t.today.week.cta}
+          <span className="row-sub">{t.today.week.ctaSub}</span>
         </span>
       </button>
     );
@@ -44,9 +46,9 @@ export function WeekPlan({ compact = false }: { compact?: boolean }) {
   return (
     <div className="card">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: editing ? 10 : 6 }}>
-        <p className="field-label" style={{ margin: 0 }}>Diese Woche</p>
+        <p className="field-label" style={{ margin: 0 }}>{t.today.week.title}</p>
         <button className="btn plain" style={{ minHeight: 28 }} onClick={() => { setEditing((v) => !v); haptic("tap"); }}>
-          {editing ? "Fertig" : "Ändern"}
+          {editing ? t.common.done : t.common.change}
         </button>
       </div>
 
@@ -57,8 +59,8 @@ export function WeekPlan({ compact = false }: { compact?: boolean }) {
             className="field"
             value={plans[i] ?? ""}
             maxLength={60}
-            placeholder={`Schwerpunkt ${i + 1}`}
-            aria-label={`Schwerpunkt ${i + 1}`}
+            placeholder={t.today.week.placeholder(i + 1)}
+            aria-label={t.today.week.placeholder(i + 1)}
             onChange={(e) => write(i, e.target.value)}
             style={{ marginBottom: i === MAX_WEEK_PLANS - 1 ? 0 : 10 }}
           />
@@ -71,7 +73,7 @@ export function WeekPlan({ compact = false }: { compact?: boolean }) {
         </ol>
       ) : (
         <p style={{ margin: 0, fontSize: 14, color: "var(--label-2)" }}>
-          Noch nichts gesetzt — drei Richtungen reichen.
+          {t.today.week.empty}
         </p>
       )}
     </div>

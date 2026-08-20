@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Hydrated } from "@/components/Hydrated";
 import { ViewSwitch } from "@/components/ViewSwitch";
+import { useT } from "@/lib/i18n";
 import { GoalsView } from "@/components/views/GoalsView";
 import { StatsView } from "@/components/views/StatsView";
 
@@ -23,6 +24,7 @@ export default function FortschrittPage() {
  *  und teilen sich deshalb einen Tab. Der Umschalter steht in der URL, damit
  *  Verknüpfungen und der Zurück-Knopf auf der richtigen Hälfte landen. */
 function Fortschritt() {
+  const t = useT();
   const params = useSearchParams();
   const [tab, setTab] = useState<Tab>(params.get("t") === "stats" ? "stats" : "ziele");
 
@@ -34,11 +36,11 @@ function Fortschritt() {
   const switcher = (
     <ViewSwitch
       value={tab}
-      label="Ziele oder Stats"
+      label={t.progress.switchLabel}
       onChange={change}
       options={[
-        { value: "ziele", label: "Ziele" },
-        { value: "stats", label: "Stats" },
+        { value: "ziele", label: t.progress.goals },
+        { value: "stats", label: t.progress.stats },
       ]}
     />
   );

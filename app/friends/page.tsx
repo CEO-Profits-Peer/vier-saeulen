@@ -104,12 +104,12 @@ function Friends() {
      Prozentwert und die Serie — alles andere bleibt auf dem Gerät. */
   useEffect(() => {
     if (!user || !me) return;
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       void publishToday(user.id, key, myScore, myStreak).catch(() => {
         /* Kein Netz: der nächste Aufruf holt es nach. */
       });
     }, 2000);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [user, me, key, myScore, myStreak]);
 
   /* Profiländerungen nachziehen: wer seinen Avatar wechselt, soll bei Freunden
@@ -133,14 +133,14 @@ function Friends() {
       JSON.stringify(me.sigil ?? null) === JSON.stringify(next.sigil);
     if (same) return;
 
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       void saveMyProfile(user.id, next)
         .then(() => setMe((cur) => (cur ? { ...cur, ...next } : cur)))
         .catch(() => {
           /* Offline oder Spalten fehlen — der nächste Versuch holt es nach. */
         });
     }, 2500);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [user, me, data.profile]);
 
   const guard = async (fn: () => Promise<void>, ok?: string) => {

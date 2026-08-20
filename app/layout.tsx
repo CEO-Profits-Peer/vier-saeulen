@@ -11,11 +11,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Vier Säulen",
+  title: "PEER Routines",
   description: "Learn, Body, Image, Money — dein Tag in vier Säulen, mit Flow-Timer, Zielen und Streaks.",
   manifest: "/manifest.webmanifest",
-  applicationName: "Vier Säulen",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Vier Säulen" },
+  applicationName: "PEER Routines",
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "PEER Routines" },
   icons: {
     icon: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
     apple: [{ url: "/icon-192.png", sizes: "192x192" }],

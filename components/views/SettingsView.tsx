@@ -19,6 +19,8 @@ import {
   updatePassword,
 } from "@/lib/auth";
 import { useInstall } from "@/lib/install";
+import { useT, useLang } from "@/lib/i18n";
+import { ViewSwitch } from "@/components/ViewSwitch";
 import { useNet, netMessage } from "@/lib/net";
 import { cloudEnabled } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
@@ -65,6 +67,7 @@ function download(filename: string, content: string, type: string) {
    wie alles andere. Kein zusätzliches Schema, keine zweite Tabelle.
    ============================================================ */
 function ProfileCard() {
+  const t = useT();
   const profile = useStore((s) => s.data.profile);
   const setProfile = useStore((s) => s.setProfile);
   const data = useStore((s) => s.data);
@@ -80,7 +83,7 @@ function ProfileCard() {
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <button
           onClick={() => { setEditing((v) => !v); haptic("tap"); }}
-          aria-label="Profilbild ändern"
+          aria-label={t.you.changeAvatar}
           aria-expanded={editing}
           style={{ borderRadius: "50%", flex: "none" }}
         >
@@ -93,8 +96,8 @@ function ProfileCard() {
             style={{ marginBottom: 4, fontWeight: 600, fontSize: 17 }}
             value={profile?.name ?? ""}
             maxLength={40}
-            placeholder="Dein Name"
-            aria-label="Anzeigename"
+            placeholder={t.you.yourName}
+            aria-label={t.you.displayName}
             onChange={(e) => setProfile({ name: e.target.value })}
           />
           <div style={{ fontSize: 13, color: "var(--label-2)", paddingLeft: 4 }}>
@@ -117,6 +120,32 @@ function ProfileCard() {
           Profilbild ändern
         </button>
       )}
+    </div>
+  );
+}
+
+/* ============================================================
+   Sprache — die Oberflaeche, nicht die eigenen Eintraege
+   ============================================================ */
+function LanguageCard() {
+  const t = useT();
+  const lang = useLang();
+  const setProfile = useStore((s) => s.setProfile);
+
+  return (
+    <div className="card">
+      <ViewSwitch
+        value={lang}
+        label={t.you.language}
+        onChange={(next) => setProfile({ lang: next })}
+        options={[
+          { value: "de" as const, label: "Deutsch" },
+          { value: "en" as const, label: "English" },
+        ]}
+      />
+      <p style={{ fontSize: 13, color: "var(--label-2)", margin: "12px 4px 0" }}>
+        {t.you.languageHint}
+      </p>
     </div>
   );
 }
@@ -175,6 +204,7 @@ function SyncRow() {
 }
 
 export function SettingsView({ below }: { below?: ReactNode }) {
+  const t = useT();
   const data = useStore((s) => s.data);
   const setData = useStore((s) => s.setData);
   const resetAll = useStore((s) => s.resetAll);
@@ -259,6 +289,9 @@ export function SettingsView({ below }: { below?: ReactNode }) {
       <ProfileCard />
 
       <InstallCard />
+
+      <p className="section-title">{t.you.language}</p>
+      <LanguageCard />
 
       <p className="section-title">Sync</p>
       {!cloudEnabled ? (
@@ -429,10 +462,10 @@ export function SettingsView({ below }: { below?: ReactNode }) {
 
       <p className="section-title">Daten</p>
       <div className="group">
-        <button className="row tappable" onClick={() => { download(`vier-saeulen-${todayKey()}.json`, JSON.stringify(data, null, 2), "application/json"); haptic("tap"); }}>
+        <button className="row tappable" onClick={() => { download(`peer-routines-${todayKey()}.json`, JSON.stringify(data, null, 2), "application/json"); haptic("tap"); }}>
           <span className="row-title">Backup herunterladen<span className="row-sub">JSON — alles, inklusive Sequenzen und Profil</span></span>
         </button>
-        <button className="row tappable" onClick={() => { download(`vier-saeulen-${todayKey()}.csv`, csvFrom(data), "text/csv;charset=utf-8"); haptic("tap"); }}>
+        <button className="row tappable" onClick={() => { download(`peer-routines-${todayKey()}.csv`, csvFrom(data), "text/csv;charset=utf-8"); haptic("tap"); }}>
           <span className="row-title">CSV herunterladen<span className="row-sub">Für Tabellen — ein Tag pro Zeile</span></span>
         </button>
         <button

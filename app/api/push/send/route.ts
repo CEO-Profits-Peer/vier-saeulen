@@ -66,7 +66,7 @@ export async function POST(request: Request) {
   webpush.setVapidDetails(subject, publicKey, privateKey);
 
   const payload = JSON.stringify({
-    title: "Vier Säulen",
+    title: "PEER Routines",
     body: "Tag abschließen — Check-in offen.",
     url: "/?checkin=1",
     tag: "daily-checkin",

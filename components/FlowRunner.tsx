@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
+import { useT } from "@/lib/i18n";
 import { useState } from "react";
 import { Ring } from "./Ring";
 import { Forward, Pause, Play, Stop } from "./Icons";
@@ -13,6 +14,7 @@ import { fmtClock } from "@/lib/date";
 import { SEG_KINDS } from "@/lib/types";
 
 export function FlowRunner() {
+  const t = useT();
   const run = useStore((s) => s.run);
   const data = useStore((s) => s.data);
   const pauseRun = useStore((s) => s.pauseRun);
@@ -128,7 +130,7 @@ export function FlowRunner() {
             haptic("tap");
           }}
           style={{ width: 86, height: 86, borderRadius: "50%", padding: 0, background: "var(--p)" }}
-          aria-label={run.pausedAt ? "Fortsetzen" : "Pause"}
+          aria-label={t.flow.resume}
         >
           {run.pausedAt ? <Play size={30} /> : <Pause size={30} />}
         </button>

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { addDays, dkey, fmtShort } from "@/lib/date";
 import { dayStats } from "@/lib/score";
-import { DAY_ABBR, STREAK_MIN, type AppData } from "@/lib/types";
+import { useT } from "@/lib/i18n";
+import { STREAK_MIN, type AppData } from "@/lib/types";
 
 const N = 14;
 const W = 340;
@@ -14,6 +15,7 @@ const padT = 12;
 const padB = 22;
 
 export function Trend({ data }: { data: AppData }) {
+  const t = useT();
   const [picked, setPicked] = useState<number | null>(null);
 
   const points = Array.from({ length: N }, (_, i) => {
@@ -74,7 +76,7 @@ export function Trend({ data }: { data: AppData }) {
       </svg>
       <p style={{ fontSize: 13.5, color: "var(--label-2)", margin: "6px 0 0" }}>
         {active
-          ? `${DAY_ABBR[active.date.getDay()]} ${fmtShort(active.date)} · ${active.tracked ? `${active.pct} %` : "nicht getrackt"}`
+          ? `${t.dayAbbr[active.date.getDay()]} ${fmtShort(active.date)} · ${active.tracked ? `${active.pct} %` : t.common.notTracked}`
           : "Gestrichelt: die 60-%-Linie, ab der die Streak zählt."}
       </p>
     </div>

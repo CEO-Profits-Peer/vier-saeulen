@@ -3,13 +3,15 @@
 import { useState } from "react";
 import { addDays, dkey, fmtShort, mondayOf, todayKey } from "@/lib/date";
 import { dayStats } from "@/lib/score";
-import { DAY_ABBR, type AppData } from "@/lib/types";
+import { useT } from "@/lib/i18n";
+import { type AppData } from "@/lib/types";
 
 const WEEKS = 12;
 const STEP = ["var(--heat-0)", "var(--heat-1)", "var(--heat-2)", "var(--heat-3)", "var(--heat-4)"];
 const stepOf = (pct: number, tracked: boolean) => (!tracked ? 0 : pct >= 85 ? 4 : pct >= 60 ? 3 : pct >= 40 ? 2 : pct > 0 ? 1 : 0);
 
 export function Heatmap({ data }: { data: AppData }) {
+  const t = useT();
   const [picked, setPicked] = useState<string | null>(null);
   const today = new Date();
   const start = addDays(mondayOf(today), -(WEEKS - 1) * 7);
@@ -30,7 +32,7 @@ export function Heatmap({ data }: { data: AppData }) {
         <div style={{ display: "grid", gridTemplateRows: "repeat(7, 1fr)", gap: 4, paddingTop: 1 }}>
           {[1, 2, 3, 4, 5, 6, 0].map((d) => (
             <span key={d} className="mono" style={{ fontSize: 9, color: "var(--label-3)", lineHeight: "16px" }}>
-              {DAY_ABBR[d]}
+              {t.dayAbbr[d]}
             </span>
           ))}
         </div>
@@ -66,7 +68,7 @@ export function Heatmap({ data }: { data: AppData }) {
 
       <p style={{ fontSize: 13.5, color: "var(--label-2)", margin: "10px 0 0", minHeight: 20 }}>
         {detail
-          ? `${DAY_ABBR[new Date(detail.key).getDay()]} ${fmtShort(new Date(detail.key))} · ${
+          ? `${t.dayAbbr[new Date(detail.key).getDay()]} ${fmtShort(new Date(detail.key))} · ${
               detail.tracked ? `${detail.stats.pct} % · ${detail.stats.done} von ${detail.stats.total} Punkten` : "nicht getrackt"
             }`
           : "Tippe auf einen Tag für die Details."}

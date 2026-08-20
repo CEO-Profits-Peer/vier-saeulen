@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useT } from "@/lib/i18n";
 import { Pause, Play } from "./Icons";
 import { remainingMs } from "@/lib/flow";
 import { haptic } from "@/lib/haptics";
@@ -11,6 +12,7 @@ import { SEG_KINDS } from "@/lib/types";
 
 /** Läuft eine Sequenz im Hintergrund, bleibt sie über der Tab-Leiste sichtbar — wie „Aktuelles Medium". */
 export function RunBar() {
+  const t = useT();
   const run = useStore((s) => s.run);
   const data = useStore((s) => s.data);
   const setRunMinimized = useStore((s) => s.setRunMinimized);
@@ -58,7 +60,7 @@ export function RunBar() {
         <button
           onClick={() => { setRunMinimized(false); haptic("tap"); }}
           style={{ flex: 1, display: "flex", alignItems: "center", gap: 12, textAlign: "left", minWidth: 0 }}
-          aria-label="Sequenz öffnen"
+          aria-label={t.flow.openRun}
         >
           <span style={{ fontSize: 18 }}>{routine.emoji}</span>
           <span style={{ minWidth: 0, flex: 1 }}>
@@ -75,7 +77,7 @@ export function RunBar() {
           className="btn"
           style={{ width: 40, height: 40, borderRadius: "50%", padding: 0, background: "var(--p)", color: "#fff" }}
           onClick={() => { run.pausedAt ? resumeRun() : pauseRun(); haptic("tap"); }}
-          aria-label={run.pausedAt ? "Fortsetzen" : "Pause"}
+          aria-label={t.flow.resume}
         >
           {run.pausedAt ? <Play size={17} /> : <Pause size={17} />}
         </button>

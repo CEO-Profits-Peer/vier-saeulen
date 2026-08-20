@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/lib/auth";
+import { detectLang } from "@/lib/dict";
 import { useInstall, isStandalone } from "@/lib/install";
 import { useNet, netMessage } from "@/lib/net";
 import { useStore } from "@/lib/store";
@@ -62,6 +63,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
       window.removeEventListener("appinstalled", onInstalled);
       mq.removeEventListener("change", onMode);
     };
+  }, []);
+
+  /* Sprache. Nur beim allerersten Start: danach ist sie eine gespeicherte
+     Entscheidung und darf nicht mehr vom Browser überschrieben werden.
+     Setzt ausserdem <html lang>, damit Vorlesehilfen richtig aussprechen. */
+  useEffect(() => {
+    const current = useStore.getState().data.profile?.lang;
+    if (!current) {
+      useStore.getState().setProfile({ lang: detectLang() });
+    }
+    const apply = () => {
+      document.documentElement.lang = useStore.getState().data.profile?.lang ?? "de";
+    };
+    apply();
+    return useStore.subscribe(apply);
   }, []);
 
   /* Anmeldestatus */

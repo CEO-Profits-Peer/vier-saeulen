@@ -130,6 +130,9 @@ export interface Profile {
   accent?: Pillar;
   /** Tag der ersten Nutzung, fuer "dabei seit" */
   since?: string;
+  /** Sprache der Oberflaeche. Fehlt sie, setzt Providers sie beim ersten
+   *  Start auf das, was der Browser bevorzugt. */
+  lang?: "de" | "en";
   updatedAt: number;
 }
 

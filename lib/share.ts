@@ -106,7 +106,7 @@ export function renderDayCard(data: AppData, key: string): HTMLCanvasElement {
   ctx.fillStyle = label2;
   ctx.fillText("%", cx, cy + 88);
 
-  /* Vier Säulen als Balken */
+  /* Die vier Säulen als Balken */
   let y = 790;
   for (const p of PKEYS) {
     const pct = Math.round(ratio(s.by[p]) * 100);
@@ -156,7 +156,7 @@ export async function shareDayCard(data: AppData, key: string): Promise<ShareRes
   try {
     const blob = await toBlob(renderDayCard(data, key));
     if (!blob) return "failed";
-    const file = new File([blob], `vier-saeulen-${key}.png`, { type: "image/png" });
+    const file = new File([blob], `peer-routines-${key}.png`, { type: "image/png" });
 
     if (navigator.canShare?.({ files: [file] })) {
       try {

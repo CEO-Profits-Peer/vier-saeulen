@@ -1,6 +1,7 @@
 "use client";
 
 import { WeekPlan } from "@/components/WeekPlan";
+import { useT } from "@/lib/i18n";
 import { shareDayCard } from "@/lib/share";
 import Link from "next/link";
 import { motion } from "motion/react";
@@ -26,6 +27,7 @@ export default function TodayPage() {
 }
 
 function Today() {
+  const t = useT();
   const key = useToday();
   const data = useStore((s) => s.data);
   const toggleHabitDone = useStore((s) => s.toggleHabitDone);
@@ -53,12 +55,12 @@ function Today() {
     stats.total === 0
       ? "Heute steht nichts im System — leg unter System Routinen an."
       : stats.pct >= 100
-        ? "Perfekter Tag. Genau die Sorte, die Streaks baut."
+        ? t.today.notes.perfect
         : stats.pct >= STREAK_MIN
-          ? "Über der Streak-Grenze. Alles ab hier ist Bonus."
+          ? t.today.notes.above
           : stats.pct > 0
-            ? `Noch ${STREAK_MIN - stats.pct} Punkte-Prozent bis zur Streak.`
-            : "Noch nichts abgehakt — fang mit einer Kleinigkeit an.";
+            ? t.today.notes.below(STREAK_MIN - stats.pct)
+            : t.today.notes.nothing;
 
   const skipsUsed = Object.keys(rec?.skipped ?? {}).length;
   const skipsLeft = Math.max(0, MAX_SKIPS_PER_DAY - skipsUsed);
@@ -69,23 +71,23 @@ function Today() {
   return (
     <>
       <Nav
-        title="Heute"
+        title={t.today.title}
         subtitle={fmtLong(fromKey(key))}
         right={
           <>
             <button
               className="badge"
-              aria-label="Tag als Bild teilen"
+              aria-label={t.today.shareLabel}
               onClick={async () => {
                 const res = await shareDayCard(data, key);
-                if (res === "downloaded") toast("Als Bild gespeichert");
-                else if (res === "failed") toast("Teilen hat nicht geklappt");
+                if (res === "downloaded") toast(t.today.savedAsImage);
+                else if (res === "failed") toast(t.today.shareFailed);
               }}
             >
-              ↗ Teilen
+              {`↗ ${t.today.share}`}
             </button>
-            <Link href="/du" className="badge" aria-label="Konto und Einstellungen">
-              ⚙︎ Du
+            <Link href="/du" className="badge" aria-label={t.tabs.you}>
+              {t.today.settings}
             </Link>
           </>
         }
@@ -114,8 +116,8 @@ function Today() {
               ))}
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 13, color: "var(--label-2)" }} className="mono">
-              <span>{stats.done} / {stats.total} Punkte</span>
-              <span>{days > 0 ? `🔥 ${days} Tage` : `Level ${level.lvl}`}</span>
+              <span>{t.today.pointsOf(stats.done, stats.total)}</span>
+              <span>{days > 0 ? t.today.streakDays(days) : t.today.level(level.lvl)}</span>
             </div>
           </div>
         </div>
@@ -156,7 +158,7 @@ function Today() {
         >
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: "var(--p)", letterSpacing: "0.02em" }}>
-              ALS NÄCHSTES · {BLOCKS[next.block].toUpperCase()}
+              {t.today.next.toUpperCase()} · {t.blocks[next.block].toUpperCase()}
             </div>
             <div style={{ fontSize: 17, fontWeight: 600, marginTop: 2 }}>{next.name}</div>
           </div>
@@ -210,7 +212,7 @@ function Today() {
         return (
           <div key={b}>
             <p className="section-title" style={{ display: "flex", justifyContent: "space-between" }}>
-              <span>{BLOCKS[b]}</span>
+              <span>{t.blocks[b]}</span>
               <span className="mono" style={{ textTransform: "none" }}>
                 {done}/{hs.filter((h) => !rec?.skipped?.[h.id]).length}
               </span>
@@ -242,21 +244,21 @@ function Today() {
                       disabled={blocked}
                       title={
                         isSkipped
-                          ? "Doch wieder einplanen"
+                          ? t.today.skip.undoHint
                           : blocked
-                            ? `Heute schon ${MAX_SKIPS_PER_DAY} ausgelassen`
-                            : "Heute auslassen — zählt dann nicht ins Tagesziel"
+                            ? t.today.skip.blocked(MAX_SKIPS_PER_DAY)
+                            : t.today.skip.hint
                       }
-                      aria-label={isSkipped ? `${h.name} wieder einplanen` : `${h.name} heute auslassen`}
+                      aria-label={isSkipped ? t.today.skip.undoLabel(h.name) : t.today.skip.label(h.name)}
                       onClick={() => {
                         if (blocked) {
                           haptic("warn");
-                          toast(`Mehr als ${MAX_SKIPS_PER_DAY} pro Tag wären geschummelt`);
+                          toast(t.today.skip.tooMany(MAX_SKIPS_PER_DAY));
                           return;
                         }
                         toggleHabitSkip(h.id);
                         haptic("tap");
-                        toast(isSkipped ? "Wieder eingeplant" : "Heute ausgelassen — zählt nicht ins Ziel");
+                        toast(isSkipped ? t.today.skip.undone : t.today.skip.done);
                       }}
                     >
                       {isSkipped ? <Undo /> : <SkipDay />}
@@ -272,22 +274,22 @@ function Today() {
 
       {list.length === 0 ? (
         <div className="empty">
-          Für heute ({DAY_ABBR[fromKey(key).getDay()]}) ist keine Routine geplant.
+          {t.today.nothingPlanned(t.dayAbbr[fromKey(key).getDay()])}
           <br />
-          <Link href="/du?t=routinen">Unter Du → Routinen anlegen</Link>
+          <Link href="/du?t=routinen">{t.today.createRoutines}</Link>
         </div>
       ) : null}
 
       {/* Extra-Aufgaben */}
-      <p className="section-title">Heute extra</p>
+      <p className="section-title">{t.today.extra}</p>
       <div className="group">
-        {tasks.map((t) => (
-          <div key={t.id} className={`row${t.done ? " checked" : ""}`} style={{ ["--p" as string]: "var(--label-2)" }}>
-            <button className="checkbox" onClick={() => { toggleTask(t.id); haptic("tap"); }} aria-label={t.done ? "Als offen markieren" : "Als erledigt markieren"}>
+        {tasks.map((task) => (
+          <div key={task.id} className={`row${task.done ? " checked" : ""}`} style={{ ["--p" as string]: "var(--label-2)" }}>
+            <button className="checkbox" onClick={() => { toggleTask(task.id); haptic("tap"); }} aria-label={task.done ? t.today.markOpen : t.today.markDone}>
               <Check size={15} />
             </button>
-            <span className="row-title">{t.text}</span>
-            <button className="btn plain" onClick={() => { removeTask(t.id); haptic("tap"); }} aria-label="Aufgabe löschen" style={{ color: "var(--label-3)" }}>
+            <span className="row-title">{task.text}</span>
+            <button className="btn plain" onClick={() => { removeTask(task.id); haptic("tap"); }} aria-label={t.today.deleteTask} style={{ color: "var(--label-3)" }}>
               ✕
             </button>
           </div>
@@ -307,16 +309,16 @@ function Today() {
           <input
             value={taskText}
             onChange={(e) => setTaskText(e.target.value)}
-            placeholder="Einmalige Aufgabe für heute"
+            placeholder={t.today.newTask}
             style={{ flex: 1, background: "none", border: 0, fontSize: 16, minWidth: 0 }}
-            aria-label="Neue Aufgabe"
+            aria-label={t.today.newTaskLabel}
           />
           {taskText ? <button className="btn plain" type="submit">Add</button> : null}
         </form>
       </div>
 
       {/* Check-in */}
-      <p className="section-title">Check-in</p>
+      <p className="section-title">{t.today.checkin}</p>
       <div className="card">
         <Scale label="Energie" value={checkin.energy ?? null} onChange={(v) => setCheckin({ energy: v })} />
         <Scale label="Fokus" value={checkin.focus ?? null} onChange={(v) => setCheckin({ focus: v })} />
